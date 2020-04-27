@@ -11,7 +11,7 @@ from .layers import swish, mish, HSI_prior_network
 
 class HIPN(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, ratio=8, block_num=9, activation='relu', output_norm='sigmoid'):
+    def __init__(self, input_ch, output_ch, ratio=8, block_num=9, activation='relu', output_norm=None):
         super(HIPN, self).__init__()
         # start_ch = 64
         self.activation = activation
@@ -40,7 +40,7 @@ class HIPN(torch.nn.Module):
             x_start = shortcut_block(x_start)
             x = x_res + x_start + x_hsi
             # x = torch.cat([x_start, s_hsi, x_res], dim=1)
-        return self.output_conv(x)
+        return self._output_norm_fn(self.output_conv(x))
 
     def _activation_fn(self, x):
         if self.activation == 'relu':
@@ -55,6 +55,8 @@ class HIPN(torch.nn.Module):
             return torch.sigmoid(x)
         elif self.output_norm == 'tanh':
             return torch.tanh(x)
+        else:
+            return x
 
 
 if __name__ == '__main__':

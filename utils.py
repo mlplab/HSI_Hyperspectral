@@ -17,6 +17,10 @@ import torchvision
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
+def normalize(x):
+    return (x - x.min()) / (x.max() - x.min())
+
+
 def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
 
     if os.path.exists(save_path):
