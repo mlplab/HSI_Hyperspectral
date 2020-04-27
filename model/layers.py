@@ -157,3 +157,33 @@ class DW_PT_Conv(torch.nn.Module):
         x = self.point(x)
         x = self._activation_fn(x)
         return x
+
+
+class HSI_prior_network(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, activation='relu', scale=4):
+        super(HSI_prior_network, self).__init__()
+        self.activation = activation
+        self.spatial_1 = torch.nn.Conv2d(input_ch, input_ch // scale, 3, 1, 1)
+        self.spatial_2 = torch.nn.Conv2d(input_ch // scale, output_ch, 3, 1, 1)
+        self.spectral = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
+
+    def _activation_fn(self, x):
+        if self.activation == 'relu':
+            return torch.relu(x)
+        elif self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+
+    def forward(self, x):
+        x_in = x
+        x = self.spatial_1(x)
+        x = self._activation_fn(x)
+        x = self.spatial_2(x)
+        x = self._activation_fn(x)
+        # x = torch.cat([x, x_in], dim=1)
+        x += x_in
+        x = self.spectral(x)
+        x = self._activation_fn(x)
+        return x
