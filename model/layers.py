@@ -188,3 +188,16 @@ class HSI_prior_network(torch.nn.Module):
         x = self.spectral(x)
         # x = self._activation_fn(x)
         return x
+
+
+class Global_Variance_Pooling(torch.nn.Module):
+
+    def __init__(self):
+        super(Global_Variance_Pooling, self).__init__()
+        pass
+
+    def forward(self, x):
+        batch_size, ch, h, w = x.size()
+        avg_x = torch.nn.functional.avg_pool2d(x, kernel=(h, w))
+        var_x = torch.nn.functional.avg_pool2d((x - avg_x) ** 2, kernel=(h, w))
+        return var_x
