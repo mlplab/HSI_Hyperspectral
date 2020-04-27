@@ -6,7 +6,7 @@ Hyperspectral Image Prior Network Model
 
 import torch
 from torchsummary import summary
-from layers import swish, mish, HSI_prior_network
+from .layers import swish, mish, HSI_prior_network
 
 
 class HIPN(torch.nn.Module):
@@ -28,7 +28,7 @@ class HIPN(torch.nn.Module):
         self.hsi_prior_block = torch.nn.Sequential(*hsi_prior_block)
         self.residual_block = torch.nn.Sequential(*residual_block)
         self.shortcut_block = torch.nn.Sequential(*shortcut_block)
-        self.output_conv = torch.nn.Conv2d(k, output_ch, 3, 1, 1)
+        self.output_conv = torch.nn.Conv2d(k, output_ch, 1, 1, 0)
 
     def forward(self, x):
 

@@ -186,5 +186,5 @@ class HSI_prior_network(torch.nn.Module):
         # x = torch.cat([x, x_in], dim=1)
         x = h + x_in
         x = self.spectral(x)
-        x = self._activation_fn(x)
+        # x = self._activation_fn(x)
         return x
