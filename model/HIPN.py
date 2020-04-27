@@ -6,12 +6,12 @@ Hyperspectral Image Prior Network Model
 
 import torch
 from torchsummary import summary
-from .layers import swish, mish, HSI_prior_network
+from layers import swish, mish, HSI_prior_network
 
 
 class HIPN(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, block_num=9, activation='relu', output_norm='sigmoid'):
+    def __init__(self, input_ch, output_ch, ratio=8, block_num=9, activation='relu', output_norm='sigmoid'):
         super(HIPN, self).__init__()
         # start_ch = 64
         self.activation = activation
@@ -19,22 +19,26 @@ class HIPN(torch.nn.Module):
         k = 64
         self.start_conv = torch.nn.Conv2d(input_ch, k, 3, 1, 1)
         hsi_prior_block = []
+        shortcut_block = []
         residual_block = []
         for block in range(block_num):
-            hsi_prior_block.append(HSI_prior_network(k, k))
+            hsi_prior_block.append(HSI_prior_network(k, k, ratio=ratio))
             residual_block.append(torch.nn.Conv2d(k, k, 3, 1, 1))
+            shortcut_block.append(torch.nn.Identity())
         self.hsi_prior_block = torch.nn.Sequential(*hsi_prior_block)
         self.residual_block = torch.nn.Sequential(*residual_block)
+        self.shortcut_block = torch.nn.Sequential(*shortcut_block)
         self.output_conv = torch.nn.Conv2d(k, output_ch, 3, 1, 1)
 
     def forward(self, x):
 
         x = self.start_conv(x)
         x_start = x
-        for hsi_prior_block, residual_block in zip(self.hsi_prior_block, self.residual_block):
+        for hsi_prior_block, residual_block, shortcut_block in zip(self.hsi_prior_block, self.residual_block, self.shortcut_block):
             x_hsi = hsi_prior_block(x)
             x_res = residual_block(x)
-            x = x_res + x + x_hsi
+            x_start = shortcut_block(x_start)
+            x = x_res + x_start + x_hsi
             # x = torch.cat([x_start, s_hsi, x_res], dim=1)
         return self._output_norm_fn(self.output_conv(x))
 
@@ -55,5 +59,6 @@ class HIPN(torch.nn.Module):
 
 if __name__ == '__main__':
 
-    model = HIPN(32, 31)
-    summary(model, (32, 64, 64))
+    input_ch = 1
+    model = HIPN(input_ch, 31)
+    summary(model, (input_ch, 64, 64))

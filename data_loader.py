@@ -37,7 +37,7 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         trans_data = nd_data
         # trans_data = torchvision.transforms.ToTensor()(nd_data)
         measurement_data = torch.sum(trans_data * self.mask, dim=0).unsqueeze(0)
-        if concat is True:
+        if self.concat is True:
             input_data = torch.cat([measurement_data, self.mask], dim=0)
         else:
             input_data = measurement_data
