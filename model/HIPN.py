@@ -5,13 +5,13 @@ Hyperspectral Image Prior Network Model
 
 
 import torch
-from layers import swish, mish, HIS_prior_network
+from .layers import swish, mish, HSI_prior_network
 
 
 class HIPN(torch.nn.Module):
 
     def __init__(input_ch, output_ch, block_num=9, activation='relu', output_norm='sigmoid'):
-        super(HIPN, self).__init__()j
+        super(HIPN, self).__init__()
         # start_ch = 64
         self.activation = activation
         self.output_norm = output_norm

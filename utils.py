@@ -6,6 +6,7 @@ import shutil
 import scipy.io
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from PIL import Image
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -23,8 +24,7 @@ def make_patch(data_path, save_path, size=256, ch=24):
     os.mkdir(save_path)
 
     data_list = os.listdir(data_path)
-    for i, name in enumerate(data_list):
-        print(name)
+    for i, name in enumerate(tqdm(data_list)):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
         data = f['data']
@@ -35,8 +35,7 @@ def make_patch(data_path, save_path, size=256, ch=24):
         patch_data = patch_data.permute(
             (0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
         for i in range(patch_data.size()[0]):
-            print(i)
-            save_data = patch_data[i].to('cpu').detach().numpy().copy()
+            save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
             save_name = os.path.join(save_path, f'{idx}_{i}.mat')
             scipy.io.savemat(save_name, {'data': save_data})
 
