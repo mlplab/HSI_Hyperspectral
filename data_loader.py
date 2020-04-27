@@ -36,18 +36,18 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         else:
             nd_data = torchvision.transforms.ToTensor()(nd_data)
         trans_data = nd_data
-        trans_data = normalize(trans_data)
-        trans_data *= 2. - 1.
+        label_data = normalize(trans_data)
+        label_data = trans_data * 2. - 1.
         # trans_data = torchvision.transforms.ToTensor()(nd_data)
         measurement_data = torch.sum(trans_data * self.mask, dim=0).unsqueeze(0)
         # measurement_data = (measurement_data - measurement_data.min()) / (measurement_data.max() - measurement_data.min())
         measurement_data = normalize(measurement_data)
-        measurement_data *= 2. - 1.
+        measurement_data = measurement_data * 2. - 1.
         if self.concat is True:
             input_data = torch.cat([measurement_data, self.mask], dim=0)
         else:
             input_data = measurement_data
-        return input_data, trans_data
+        return input_data, label_data
 
     def __len__(self):
         return self.data_len
