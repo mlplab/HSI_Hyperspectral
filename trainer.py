@@ -36,8 +36,9 @@ class Trainer(object):
         elif isinstance(init_epoch, int):
             assert 'Please enter int to init_epochs'
 
-        _, columns = os.popen('stty size', 'r').read().split()
-        columns = int(columns) // 2
+        # _, columns = os.popen('stty size', 'r').read().split()
+        # columns = int(columns) // 2
+        columns = 200
 
         for epoch in range(init_epoch, epochs):
             dt_now = datetime.now()

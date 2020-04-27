@@ -17,7 +17,7 @@ import torchvision
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def make_patch(data_path, save_path, size=256, ch=24):
+def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
 
     if os.path.exists(save_path):
         shutil.rmtree(save_path)
@@ -27,7 +27,7 @@ def make_patch(data_path, save_path, size=256, ch=24):
     for i, name in enumerate(tqdm(data_list)):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
-        data = f['data']
+        data = f[data_key]
         data = np.expand_dims(np.asarray(
             data, np.float32).transpose([2, 0, 1]), axis=0)
         tensor_data = torch.as_tensor(data)

@@ -5,12 +5,13 @@ Hyperspectral Image Prior Network Model
 
 
 import torch
-from .layers import swish, mish, HSI_prior_network
+from torchsummary import summary
+from layers import swish, mish, HSI_prior_network
 
 
 class HIPN(torch.nn.Module):
 
-    def __init__(input_ch, output_ch, block_num=9, activation='relu', output_norm='sigmoid'):
+    def __init__(self, input_ch, output_ch, block_num=9, activation='relu', output_norm='sigmoid'):
         super(HIPN, self).__init__()
         # start_ch = 64
         self.activation = activation
@@ -30,7 +31,7 @@ class HIPN(torch.nn.Module):
 
         x = self.start_conv(x)
         x_start = x
-        for hsi_prior_block, residual_block in enumerate(self.hsi_prior_block, self.residual_block):
+        for hsi_prior_block, residual_block in zip(self.hsi_prior_block, self.residual_block):
             x_hsi = hsi_prior_block(x)
             x_res = residual_block(x)
             x = x_res + x + x_hsi
@@ -50,3 +51,9 @@ class HIPN(torch.nn.Module):
             return torch.sigmoid(x)
         elif self.output_norm == 'tanh':
             return torch.tanh(x)
+
+
+if __name__ == '__main__':
+
+    model = HIPN(32, 31)
+    summary(model, (32, 64, 64))
