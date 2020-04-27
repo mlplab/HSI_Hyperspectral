@@ -40,7 +40,7 @@ class HIPN(torch.nn.Module):
             x_start = shortcut_block(x_start)
             x = x_res + x_start + x_hsi
             # x = torch.cat([x_start, s_hsi, x_res], dim=1)
-        return self._output_norm_fn(self.output_conv(x))
+        return self.output_conv(x)
 
     def _activation_fn(self, x):
         if self.activation == 'relu':
