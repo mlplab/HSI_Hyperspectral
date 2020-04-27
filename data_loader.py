@@ -15,7 +15,7 @@ size = 256
 
 class HyperSpectralDataset(torch.utils.data.Dataset):
 
-    def __init__(self, img_path, mask_path, concat=False, transform=None):
+    def __init__(self, img_path, mask_path, concat=False, tanh=False, transform=None):
 
         self.img_path = img_path
         self.data = os.listdir(img_path)
@@ -23,6 +23,7 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         mask = sio.loadmat(mask_path)['data'].astype(np.float32)
         self.mask = torchvision.transforms.ToTensor()(mask)
         self.data_len = len(self.data)
+        self.tanh = tanh
         self.concat = concat
         self.transforms = transform
 
@@ -37,12 +38,13 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
             nd_data = torchvision.transforms.ToTensor()(nd_data)
         trans_data = nd_data
         label_data = normalize(trans_data)
-        label_data = trans_data * 2. - 1.
         # trans_data = torchvision.transforms.ToTensor()(nd_data)
         measurement_data = torch.sum(trans_data * self.mask, dim=0).unsqueeze(0)
         # measurement_data = (measurement_data - measurement_data.min()) / (measurement_data.max() - measurement_data.min())
         measurement_data = normalize(measurement_data)
-        measurement_data = measurement_data * 2. - 1.
+        if self.tanh is True:
+            label_data = label_data * 2. - 1.
+            measurement_data = measurement_data * 2. - 1.
         if self.concat is True:
             input_data = torch.cat([measurement_data, self.mask], dim=0)
         else:
