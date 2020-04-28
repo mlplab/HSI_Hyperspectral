@@ -30,7 +30,7 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))['data']
         # mat_data = mat_data['data']
-        nd_data = np.array(mat_data, dtype=np.float32)[::-1, :, :].copy()
+        nd_data = np.array(mat_data, dtype=np.float32).copy()
         if self.transforms is not None:
             for transform in self.transforms:
                 nd_data = transform(nd_data)

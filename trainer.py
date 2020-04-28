@@ -73,7 +73,7 @@ class Trainer(object):
             if self.callbacks:
                 for callback in self.callbacks:
                     callback.callback(self.model, epoch, loss=train_loss,
-                                      val_loss=val_loss, save=True, device=device)
+                                      val_loss=val_loss, save=True, device=device, optim=self.optimizer)
             if self.scheduler is not None:
                 self.scheduler.step()
             print('-' * int(columns))
