@@ -15,7 +15,7 @@ size = 256
 
 class HyperSpectralDataset(torch.utils.data.Dataset):
 
-    def __init__(self, img_path, mask_path, concat=False, tanh=False, transform=None):
+    def __init__(self, img_path, mask_path, concat=False, tanh=False, data_key='data', transform=None):
 
         self.img_path = img_path
         self.data = os.listdir(img_path)
@@ -25,10 +25,11 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         self.data_len = len(self.data)
         self.tanh = tanh
         self.concat = concat
+        self.data_key = data_key
         self.transforms = transform
 
     def __getitem__(self, idx):
-        mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))['data']
+        mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))[self.data_key]
         # mat_data = mat_data['data']
         nd_data = np.array(mat_data, dtype=np.float32).copy()
         if self.transforms is not None:

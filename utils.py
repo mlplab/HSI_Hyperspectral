@@ -127,6 +127,7 @@ class ModelCheckPoint(object):
                         'optim': kwargs['optim']},
                         os.path.join(self.colab2drive_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
                         )
+            self.colab2drive_idx += 1
         return self
 
 
