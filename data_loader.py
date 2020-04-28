@@ -37,11 +37,13 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         else:
             nd_data = torchvision.transforms.ToTensor()(nd_data)
         trans_data = nd_data
-        label_data = normalize(trans_data)
+        # label_data = normalize(trans_data)
+        label_data = trans_data / trans_data.max()
         # trans_data = torchvision.transforms.ToTensor()(nd_data)
         measurement_data = torch.sum(trans_data * self.mask, dim=0).unsqueeze(0)
         # measurement_data = (measurement_data - measurement_data.min()) / (measurement_data.max() - measurement_data.min())
-        measurement_data = normalize(measurement_data)
+        # measurement_data = normalize(measurement_data)
+        measurement_data = measurement_data / measurement_data.max()
         if self.tanh is True:
             label_data = label_data * 2. - 1.
             measurement_data = measurement_data * 2. - 1.
