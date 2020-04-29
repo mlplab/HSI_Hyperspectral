@@ -32,7 +32,7 @@ def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
         data = f[data_key]
-        # data = normalize(data)
+        data = normalize(data)
         data = np.expand_dims(np.asarray(data, np.float32).transpose([2, 0, 1]), axis=0)
         tensor_data = torch.as_tensor(data)
         patch_data = tensor_data.unfold(2, size, size).unfold(3, size, size)
@@ -118,6 +118,8 @@ class ModelCheckPoint(object):
         val_loss = np.mean(val_loss)
         checkpoint_name = os.path.join(self.checkpoint_path, self.model_name +
                                        f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.pth')
+        colab2drive_path = os.path.join(self.colab2drive_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
+
         epoch += 1
         if epoch % self.partience == 0:
             torch.save(model.state_dict(), checkpoint_name)
@@ -126,9 +128,7 @@ class ModelCheckPoint(object):
         if self.colab2drive_flag is True and epoch == self.colab2drive[self.colab2drive_idx]:
             torch.save({'model_state_dict': model.state_dict(),
                         'optim': kwargs['optim'].state_dict(),
-                        'epoch': epoch},
-                        os.path.join(self.colab2drive_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
-                        )
+                        'epoch': epoch}, colab2drive_path)
             self.colab2drive_idx += 1
         return self
 
@@ -151,8 +151,7 @@ class PlotStepLoss(object):
         else:
             loss = kwargs['loss']
             val_loss = kwargs['val_loss']
-        checkpoint_name = os.path.join(self.checkpoint_path, self.model_name +
-                                       f'_epoch_{epoch:05d}.png')
+        checkpoint_name = os.path.join(self.checkpoint_path, self.model_name + f'_epoch_{epoch:05d}.png')
         epoch += 1
         if epoch % self.partience == 0:
             plt.figure(figsize=(16, 9))
@@ -163,6 +162,7 @@ class PlotStepLoss(object):
             plt.savefig(checkpoint_name)
             plt.clf()
         return self
+
 
 class Evaluater(object):
 

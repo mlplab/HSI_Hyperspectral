@@ -150,6 +150,8 @@ class DW_PT_Conv(torch.nn.Module):
             return swish(x)
         elif self.activation == 'mish':
             return mish(x)
+        else:
+            return x
 
     def forward(self, x):
         x = self.depth(x)
@@ -182,7 +184,7 @@ class HSI_prior_network(torch.nn.Module):
         h = self.spatial_1(x)
         h = self._activation_fn(h)
         h = self.spatial_2(h)
-        h = self._activation_fn(h)
+        # h = self._activation_fn(h)
         # x = torch.cat([x, x_in], dim=1)
         x = h + x_in
         x = self.spectral(x)
@@ -190,7 +192,7 @@ class HSI_prior_network(torch.nn.Module):
         return x
 
 
-class HSI_prior_network(torch.nn.Module):
+class HSI_prior_network_None(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, activation='relu', ratio=4):
         super(HSI_prior_network, self).__init__()
@@ -221,6 +223,39 @@ class HSI_prior_network(torch.nn.Module):
         return x
 
 
+class My_HSI_network(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, activation='relu', ratio=4):
+        super(My_HSI_network, self).__init__()
+        self.activation = activation
+        self.spatial_1 = DW_PT_Conv(input_ch, int(input_ch * ratio), 3, activation=None)
+        self.spatial_2 = DW_PT_Conv(int(input_ch * ratio), input_ch, 3, activation=None)
+        self.shortcut = torch.nn.Identity()
+        self.spectral = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
+
+    def _activation_fn(self, x):
+        if self.activation == 'relu':
+            return torch.relu(x)
+        elif self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        else:
+            return x
+
+    def forward(self, x):
+        x_in = self.shortcut(x)
+        h = self.spatial_1(x)
+        h = self._activation_fn(h)
+        h = self.spatial_2(h)
+        # h = self._activation_fn(h)
+        # x = torch.cat([x, x_in], dim=1)
+        x = h + x_in
+        x = self.spectral(x)
+        # x = self._activation_fn(x)
+        return x
+
+
 class Global_Variance_Pooling(torch.nn.Module):
 
     def forward(self, x):
@@ -232,7 +267,7 @@ class Global_Variance_Pooling(torch.nn.Module):
 
 class RAM(torch.nn.Module):
 
-    def __init__(self, input_ch, outout_ch, raito=None):
+    def __init__(self, input_ch, output_ch, raito=None):
         super(RAM, self).__init__()
 
         if raito is None:
@@ -247,9 +282,9 @@ class RAM(torch.nn.Module):
     def forward(self, x):
         spatial_attn = self.spectral_attn(x)
         spectral_pooling = self.spectral_pooling(x)
-        spectral_linear = torch.relu(self.spectral_Linear(x))
-        spectral_attn = self.spectral_attn(x)
+        spectral_linear = torch.relu(self.spectral_Linear(spectral_pooling))
+        spectral_attn = self.spectral_attn(spectral_linear)
 
         attn_output = torch.sigmoid(spatial_attn + spectral_attn)
-        attn_output *= x
-        return attn_output
+        output = attn_output * x
+        return output
