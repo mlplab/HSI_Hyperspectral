@@ -32,7 +32,7 @@ def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
         data = f[data_key]
-        data = normalize(data)
+        # data = normalize(data)
         data = np.expand_dims(np.asarray(data, np.float32).transpose([2, 0, 1]), axis=0)
         tensor_data = torch.as_tensor(data)
         patch_data = tensor_data.unfold(2, size, size).unfold(3, size, size)
