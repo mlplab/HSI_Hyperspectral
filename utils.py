@@ -32,12 +32,11 @@ def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
         data = f[data_key]
-        data = np.expand_dims(np.asarray(
-            data, np.float32).transpose([2, 0, 1]), axis=0)
+        data = normalize(data)
+        data = np.expand_dims(np.asarray(data, np.float32).transpose([2, 0, 1]), axis=0)
         tensor_data = torch.as_tensor(data)
         patch_data = tensor_data.unfold(2, size, size).unfold(3, size, size)
-        patch_data = patch_data.permute(
-            (0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
+        patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
         for i in range(patch_data.size()[0]):
             save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
             save_name = os.path.join(save_path, f'{idx}_{i}.mat')
@@ -115,6 +114,8 @@ class ModelCheckPoint(object):
         else:
             loss = kwargs['loss']
             val_loss = kwargs['val_loss']
+        loss = np.mean(loss)
+        val_loss = np.mean(val_loss)
         checkpoint_name = os.path.join(self.checkpoint_path, self.model_name +
                                        f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.pth')
         epoch += 1
@@ -131,6 +132,37 @@ class ModelCheckPoint(object):
             self.colab2drive_idx += 1
         return self
 
+
+class PlotStepLoss(object):
+
+    def __init__(self, checkpoint_path, model_name, mkdir=False, partience=1, verbose=True, *args, **kwargs):
+        self.checkpoint_path = checkpoint_path
+        self.model_name = model_name
+        self.partience = partience
+        self.verbose = verbose
+        if mkdir is True:
+            if os.path.exists(self.checkpoint_path):
+                shutil.rmtree(self.checkpoint_path)
+            os.makedirs(self.checkpoint_path)
+
+    def callback(self, model, epoch, *args, **kwargs):
+        if 'loss' not in kwargs.keys() and 'val_loss' not in kwargs.keys():
+            assert 'None Loss'
+        else:
+            loss = kwargs['loss']
+            val_loss = kwargs['val_loss']
+        checkpoint_name = os.path.join(self.checkpoint_path, self.model_name +
+                                       f'_epoch_{epoch:05d}.png')
+        epoch += 1
+        if epoch % self.partience == 0:
+            plt.figure(figsize=(16, 9))
+            plt.plot(loss, marker='.')
+            plt.grid()
+            plt.xlabel('Step')
+            plt.ylabel('MSE')
+            plt.savefig(checkpoint_name)
+            plt.clf()
+        return self
 
 class Evaluater(object):
 

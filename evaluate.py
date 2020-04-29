@@ -39,10 +39,10 @@ class SAMMetrics(torch.nn.Module):
         super(SAMMetrics, self).__init__()
 
     def forward(self, x, y):
-        x_sqrt = torch.sqrt(torch.sum(x, dim=0))
-        y_sqrt = torch.sqrt(torch.sum(y, dim=0))
+        x_sqrt = torch.sqrt(torch.sum(x ** 2, dim=0))
+        y_sqrt = torch.sqrt(torch.sum(y ** 2, dim=0))
         xy = torch.sum(x * y, dim=0)
-        angle = torch.acos(xy / (x_sqrt * y_sqrt))
+        angle = torch.acos(xy / (x_sqrt * y_sqrt + 1e-7))
         return torch.mean(angle)
 
 

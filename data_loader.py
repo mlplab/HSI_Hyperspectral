@@ -38,6 +38,7 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         else:
             nd_data = torchvision.transforms.ToTensor()(nd_data)
         trans_data = nd_data
+        trans_data = normalize(trans_data)
         # label_data = normalize(trans_data)
         label_data = trans_data
         # trans_data = torchvision.transforms.ToTensor()(nd_data)

@@ -68,8 +68,8 @@ class Trainer(object):
                     psnr_show = psnr(loss)
                     self._step_show(pbar, Loss=f'{loss:.7f}', PSNR=f'{psnr_show:.7f}')
                     torch.cuda.empty_cache()
-            train_loss = np.mean(train_loss)
-            val_loss = np.mean(val_loss)
+            # train_loss = np.mean(train_loss)
+            # val_loss = np.mean(val_loss)
             if self.callbacks:
                 for callback in self.callbacks:
                     callback.callback(self.model, epoch, loss=train_loss,
