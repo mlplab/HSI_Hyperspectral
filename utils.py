@@ -116,19 +116,20 @@ class ModelCheckPoint(object):
             val_loss = kwargs['val_loss']
         loss = np.mean(loss)
         val_loss = np.mean(val_loss)
-        checkpoint_name = os.path.join(self.checkpoint_path, self.model_name +
-                                       f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.pth')
+        checkpoint_name = os.path.join(self.checkpoint_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
         colab2drive_path = os.path.join(self.colab2drive_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
 
         epoch += 1
         if epoch % self.partience == 0:
-            torch.save(model.state_dict(), checkpoint_name)
+            torch.save({'model': model.state_dict(), 'epoch': epoch, 'loss': loss,
+                        'val_loss': val_loss,
+                        'optim': kwargs['optim'].state_dict()} , checkpoint_name)
             if self.verbose is True:
                 print(f'CheckPoint Saved by {checkpoint_name}')
         if self.colab2drive_flag is True and epoch == self.colab2drive[self.colab2drive_idx]:
-            torch.save({'model_state_dict': model.state_dict(),
-                        'optim': kwargs['optim'].state_dict(),
-                        'epoch': epoch}, colab2drive_path)
+            torch.save({'model': model.state_dict(), 'epoch': epoch, 'loss': loss,
+                        'val_loss': val_loss,
+                        'optim': kwargs['optim'].state_dict()}, colab2drive_path)
             self.colab2drive_idx += 1
         return self
 

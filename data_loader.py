@@ -6,7 +6,7 @@ import torch
 import torchvision
 import numpy as np
 import scipy.io as sio
-# from utils import normalize
+from utils import normalize
 
 
 data_path = 'dataset/'
@@ -30,7 +30,6 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))[self.data_key]
-        # mat_data = mat_data['data']
         nd_data = np.array(mat_data, dtype=np.float32).copy()
         if self.transforms is not None:
             for transform in self.transforms:
@@ -41,8 +40,9 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         label_data = trans_data
         measurement_data = torch.sum(trans_data * self.mask, dim=0).unsqueeze(0)
         if self.tanh is True:
+            label_data = normalize(label_data)
             label_data = label_data * 2. - 1.
-            measurement_data = measurement_data * 2. - 1.
+            # measurement_data = measurement_data * 2. - 1.
         if self.concat is True:
             input_data = torch.cat([measurement_data, self.mask], dim=0)
         else:
