@@ -11,12 +11,12 @@ from .layers import swish, mish, HSI_prior_network
 
 class HIPN(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, ratio=8, block_num=9, activation='relu', output_norm=None):
+    def __init__(self, input_ch, output_ch, feature=64, ratio=8, block_num=9, activation='relu', output_norm=None):
         super(HIPN, self).__init__()
         # start_ch = 64
         self.activation = activation
         self.output_norm = output_norm
-        k = 64
+        k = feature
         self.start_conv = torch.nn.Conv2d(input_ch, k, 3, 1, 1)
         hsi_prior_block = []
         shortcut_block = []
