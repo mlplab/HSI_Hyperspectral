@@ -40,8 +40,9 @@ class HyperSpectralDataset(torch.utils.data.Dataset):
         label_data = trans_data
         measurement_data = torch.sum(trans_data * self.mask, dim=0).unsqueeze(0)
         if self.tanh is True:
-            label_data = normalize(label_data)
-            label_data = label_data * 2. - 1.
+            # label_data = normalize(label_data)
+            # label_data = label_data * 2. - 1.
+            label_data = torch.tanh(label_data)
             # measurement_data = measurement_data * 2. - 1.
         if self.concat is True:
             input_data = torch.cat([measurement_data, self.mask], dim=0)
