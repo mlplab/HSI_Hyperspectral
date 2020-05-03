@@ -60,8 +60,6 @@ class HSI_Network(torch.nn.Module):
         super(HSI_Network, self).__init__()
         self.activation = activation
         self.output_norm = output_norm
-        # hsi_block = [HSI_prior_block(input_ch, feature, output_ch)]
-        # residual_block = [torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)]
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
         self.start_shortcut = torch.nn.Identity()
         hsi_block = []
@@ -77,7 +75,6 @@ class HSI_Network(torch.nn.Module):
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):
-        # x_start = x
         x = self.start_conv(x)
         h = self.start_shortcut(x)
         for hsi_block, residual_block, shortcut in zip(self.hsi_block, self.residual_block, self.shortcut):

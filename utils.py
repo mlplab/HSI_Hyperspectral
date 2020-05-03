@@ -64,7 +64,6 @@ def patch_mask(mask_path, save_path, size=256, ch=24, data_key='data'):
     return None
 
 
-
 def plot_img(output_imgs, title):
     plt.imshow(output_imgs)
     plt.title('Predict')
@@ -208,11 +207,11 @@ class Evaluater(object):
         os.mkdir(save_mat_path)
 
     def _save_img(self, i, inputs, output, labels):
-        inputs_plot = inputs[:, 0].unsqueeze(0)
-        output_plot = output[:, 10].unsqueeze(0)
-        torchvision.utils.save_image(output_plot, os.path.join(self.save_output_path, f'output_{i}.png'))
-        label_plot = labels[:, 10].unsqueeze(0)
-        torchvision.utils.save_image(label_plot, os.path.join(self.save_label_path, f'label_{i}.png'))
+        inputs_plot = normalize(inputs[:, 0].unsqueeze(0))
+        output_plot = normalize(output[:, 10].unsqueeze(0))
+        # torchvision.utils.save_image(output_plot, os.path.join(self.save_output_path, f'output_{i}.png'))
+        label_plot = normalize(labels[:, 10].unsqueeze(0))
+        # torchvision.utils.save_image(label_plot, os.path.join(self.save_label_path, f'label_{i}.png'))
         output_img = torch.cat([inputs_plot, output_plot, label_plot], dim=0)
         torchvision.utils.save_image(output_img, os.path.join(self.save_alls_path, f'out_and_label_{i}.png'), nrow=3, padding=10)
         return self
@@ -267,88 +266,11 @@ class ReconstEvaluater(Evaluater):
         return self
 
 
-# class ReconstEvaluater(Evaluater):
-#
-#     def metrics(self, model, dataset, evaluate_fn, header=None):
-#         model.eval()
-#         output_evaluate = []
-#         with torch.no_grad():
-#             for i, (inputs, labels) in enumerate(tqdm(dataset)):
-#                 evaluate_list = []
-#                 inputs = inputs.unsqueeze(0).to(device)
-#                 labels = labels.unsqueeze(0).to(device)
-#                 output = model(inputs)
-#                 for metrics_func in evaluate_fn:
-#                     metrics = metrics_func(output, labels)
-#                     evaluate_list.append(np.round(metrics.item(), decimals=7))
-#                 output_evaluate.append(evaluate_list)
-#                 self._save_img(i, inputs, output, labels)
-#                 self._save_diff(i, output, labels)
-#                 self._save_mat(i, output)
-#
-#         output_evaluate_np = np.array(output_evaluate)
-#         means = list(np.mean(output_evaluate_np, axis=0))
-#         output_evaluate.append(means)
-#         output_evaluate_csv = pd.DataFrame(output_evaluate)
-#         output_evaluate_csv.to_csv(os.path.join(
-#             self.save_mat_path, 'output_evaluate.csv'), header=header)
-#         return self
-
-
-class RefineEvaluater(Evaluater):
-
-    def __init__(self, ch, save_img_path='output_refine_img',
-                 save_mat_path='output_refine_mat', save_csv_path='output_refine_csv'):
-        super(RefineEvaluater, self).__init__(save_img_path, save_mat_path,
-                                              save_csv_path)
-        self.ch = ch
-
-    def metrics(self, model, dataset, evaluate_fn, header=None):
-        model.eval()
-        output_evaluate = []
-        with torch.no_grad():
-            for i, (inputs, labels) in enumerate(tqdm(dataset)):
-                evaluate_list = []
-                inputs = inputs.unsqueeze(0).to(device)
-                labels = labels.unsqueeze(0).to(device)
-                output = model(inputs)
-                for metrics_func in evaluate_fn:
-                    metrics = metrics_func(output, labels)
-                    evaluate_list.append(np.round(metrics.item(), decimals=7))
-                output_evaluate.append(evaluate_list)
-                self._save_img(i, inputs, output, labels)
-                self._save_diff(i, output, labels)
-                # self._save_mat(i, output)
-
-        self._save_csv(output_evaluate, header)
-        return self
-
-    def _save_img(self, i, inputs, output, labels):
-        torchvision.utils.save_image(output, os.path.join(
-            self.save_output_path, f'output_{i}.png'))
-        torchvision.utils.save_image(labels, os.path.join(
-            self.save_label_path, f'label_{i}.png'))
-        output_img = torch.cat(
-            [inputs, output, labels], dim=0)
-        torchvision.utils.save_image(output_img, os.path.join(
-            self.save_alls_path, f'out_and_label_{i}.png'), nrow=3, padding=10)
-        return self
-
-    def _save_diff(self, i, output, labels):
-        _, c, h, w = output.size()
-        diff = torch.mean(torch.abs(output - labels),
-                          dim=1).to('cpu').detach().numpy().copy()
-        diff = diff.reshape(h, w)
-        plt.imshow(diff, cmap='jet')
-        plt.colorbar()
-        plt.savefig(os.path.join(self.save_diff_path, f'diff_{i}.png'))
-        plt.clf()
-
-
 # FIXME
 class Draw_Output(object):
 
-    def __init__(self, img_path, output_data, save_path='output', verbose=False, nrow=8):
+    def __init__(self, dataset, *args, save_path='output', partience=5,
+                 verbose=False, ch=10, **kwargs):
         '''
         Parameters
         ---
@@ -361,14 +283,15 @@ class Draw_Output(object):
         verbose: bool(default: False)
             verbose
         '''
-        self.img_path = img_path
-        self.output_data = output_data
-        self.data_num = len(output_data)
+        self.dataset = dataset
+        self.data_num = len(self.dataset)
         self.save_path = save_path
+        self.partience = partience
         self.verbose = verbose
-        self.input_transform = torchvision.transform.ToTensor()
-        self.output_transform = torchvision.transforms.ToPILImage()
-        self.nrow = nrow
+        self.ch = ch
+        self.diff = False
+        if 'diff' in kwargs:
+            self.diff = True
 
         ###########################################################
         # Make output directory
@@ -376,160 +299,40 @@ class Draw_Output(object):
         if os.path.exists(save_path) is True:
             shutil.rmtree(save_path)
         os.mkdir(save_path)
-        if os.path.exists(save_path + '/all_imgs') is True:
-            shutil.rmtree(save_path + '/all_imgs')
-        os.mkdir(save_path + '/all_imgs')
-        ###########################################################
-        # Draw Label Img
-        ###########################################################
-        labels = []
-        for data in self.output_data:
-            label = self.input_transform(Image.open(os.path.join(self.img_path, data)).convert('RGB'))
-            labels.append(label)
-        self.labels = torch.cat(labels).reshape(len(labels), *labels[0].shape)
-        labels_np = torchvision.utils.make_grid(self.labels, nrow=nrow, padding=10)
-        labels_np = labels_np.numpy()
-        self.labels_np = np.transpose(labels_np, (1, 2, 0))
-        del labels, labels_np
-        torchvision.utils.save_image(self.labels, os.path.join(save_path, f'labels.jpg'), nrow=nrow, padding=10)
 
     def callback(self, model, epoch, *args, **kwargs):
         keys = kwargs.keys()
-        self.epoch_save_path = os.path.join(self.save_path, f'epoch{epoch}')
-        # os.makedirs(self.epoch_save_path, exist_ok=True)
-        output_imgs = []
-        # encoder.eval()
-        # decoder.eval()
-        for i, data in enumerate(self.output_data):
-            img = self.input_transform(Image.open(os.path.join(self.img_path, data)).convert('L')).unsqueeze(0).to(device)
+        if epoch % self.partience == 0:
+            epoch_save_path = os.path.join(self.save_path, f'epoch{epoch}')
+            os.makedirs(epoch_save_path, exist_ok=True)
+            output_save_path = os.path.join(epoch_save_path, 'output')
+            os.makedirs(output_save_path, exist_ok=True)
+            if self.diff is True:
+                diff_save_path = os.path.join(self.epoch_save_path, 'diff')
+                os.makedirs(diff_save_path, exist_ok=True)
+            model.eval()
             with torch.no_grad():
-                output = model(img).squeeze().to('cpu')
-            output_imgs.append(output)
-        output_imgs = torch.cat(output_imgs).reshape(len(output_imgs), *output_imgs[0].shape)
-        if self.verbose is True:
-            self.__show_output_img_list(output_imgs)
-            # self.__show_output_img_list(self.labels)
-        if save is True:
-            torchvision.utils.save_image(output_imgs, os.path.join(self.save_path, f'all_imgs/all_imgs_{epoch}.jpg'), nrow=self.nrow, padding=10)
-        del output_imgs
+                for i, (data, label) in enumerate(self.dataset):
+                    data, label = self._trans_data(data, label)
+                    output = model(data)
+                    data_plot = normalize(data).unsqueeze(0)
+                    output_plot = normalize(output[self.ch, :, :]).unsqueeze(0)
+                    label_plot = normalize(label[self.ch, :, :]).unsqueeze(0)
+                    output_imgs = torch.cat([data_plot, output_plot, label_plot], dim=0)
+                    torchvision.utils.save_image(output_imgs, os.path.join(epoch_save_path, f'all_imgs_{i}.png'), padding=10)
+                    if self.diff is True:
+                        error = torch.abs(output_plot - label_plot).squeeze().numpy()
+                        plt.imshow(error, cmap='jet')
+                        plt.title('diff')
+                        plt.xticks(color='None')
+                        plt.yticks(color='None')
+                        plt.colorbar()
+                        plt.savefig(os.path.join(diff_save_path, 'diff_{i}.png'))
+                        plt.close()
+                    del output_imgs
         return self
 
-    def __draw_output_label(self, output, label, data):
-        output = torch.cat((label, output), dim=2)
-        output = self.output_transform(output)
-        output.save(os.path.join(self.epoch_save_path, data))
-        if self.verbose is True:
-            print(f'\rDraw Output {data}', end='')
-        return self
-
-    def __show_output_img_list(self, output_imgs):
-        plt.figure(figsize=(16, 9))
-        output_imgs_np = torchvision.utils.make_grid(output_imgs, nrow=self.nrow, padding=10)
-        output_imgs_np = output_imgs_np.numpy()
-        output_imgs_np = np.transpose(output_imgs_np, (1, 2, 0))
-        plt.subplot(1, 2, 1)
-        plot_img(output_imgs_np, 'Predict')
-        plt.subplot(1, 2, 2)
-        plot_img(self.labels_np, 'Label')
-        plt.show()
-        del output_imgs_np
-        return self
-
-
-'''
-
-class Draw_Output(object):
-
-    def __init__(self, img_path, output_data, save_path='output', verbose=False, nrow=8):
- Parameters
-  ---
-   img_path: str
-     image dataset path
-    output_data: list
-     draw output data path
-    save_path: str(default: 'output')
-     output img path
-    verbose: bool(default: False)
-     verbose
-        self.img_path = img_path
-        self.output_data = output_data
-        self.data_num = len(output_data)
-        self.save_path = save_path
-        self.verbose = verbose
-        self.input_transform = torchvision.transforms.Compose([
-            torchvision.transforms.Resize((224, 224)),
-            torchvision.transforms.ToTensor()
-        ])
-        self.output_transform = torchvision.transforms.ToPILImage()
-        self.nrow = nrow
-
-        ###########################################################
-        # Make output directory
-        ###########################################################
-        if os.path.exists(save_path) is True:
-            shutil.rmtree(save_path)
-        os.mkdir(save_path)
-        if os.path.exists(save_path + '/all_imgs') is True:
-            shutil.rmtree(save_path + '/all_imgs')
-        os.mkdir(save_path + '/all_imgs')
-        ###########################################################
-        # Draw Label Img
-        ###########################################################
-        labels = []
-        for data in self.output_data:
-            label = self.input_transform(Image.open(os.path.join(self.img_path, data)).convert('RGB'))
-            labels.append(label)
-        self.labels = torch.cat(labels).reshape(len(labels), *labels[0].shape)
-        labels_np = torchvision.utils.make_grid(self.labels, nrow=nrow, padding=10)
-        labels_np = labels_np.numpy()
-        self.labels_np = np.transpose(labels_np, (1, 2, 0))
-        del labels, labels_np
-        torchvision.utils.save_image(self.labels, os.path.join(save_path, f'labels.jpg'), nrow=nrow, padding=10)
-
-
-    def callback(self, model, epoch, *args, **kwargs):
-        if 'save' not in kwargs.keys():
-            assert 'None save mode'
-        else:
-            save = kwargs['save']
-        device = kwargs['device']
-        self.epoch_save_path = os.path.join(self.save_path, f'epoch{epoch}')
-        os.makedirs(self.epoch_save_path, exist_ok=True)
-        output_imgs = []
-        # encoder.eval()
-        # decoder.eval()
-        for i, data in enumerate(self.output_data):
-            img = self.input_transform(Image.open(os.path.join(self.img_path, data)).convert('L')).unsqueeze(0).to(device)
-            with torch.no_grad():
-                output = model(img).squeeze().to('cpu')
-            output_imgs.append(output)
-        output_imgs = torch.cat(output_imgs).reshape(len(output_imgs), *output_imgs[0].shape)
-        if self.verbose is True:
-            self.__show_output_img_list(output_imgs)
-            # self.__show_output_img_list(self.labels)
-        if save is True:
-            torchvision.utils.save_image(output_imgs, os.path.join(self.save_path, f'all_imgs/all_imgs_{epoch}.jpg'), nrow=self.nrow, padding=10)
-        del output_imgs
-        return self
-
-    def __draw_output_label(self, output, label, data):
-        output = torch.cat((label, output), dim=2)
-        output = self.output_transform(output)
-        output.save(os.path.join(self.epoch_save_path, data))
-        if self.verbose is True:
-            print(f'\rDraw Output {data}', end='')
-        return self
-
-    def __show_output_img_list(self, output_imgs):
-        plt.figure(figsize=(16, 9))
-        output_imgs_np = torchvision.utils.make_grid(output_imgs, nrow=self.nrow, padding=10)
-        output_imgs_np = output_imgs_np.numpy()
-        output_imgs_np = np.transpose(output_imgs_np, (1, 2, 0))
-        plt.subplot(1, 2, 1)
-        plot_img(output_imgs_np, 'Predict')
-        plt.subplot(1, 2, 2)
-        plot_img(self.labels_np, 'Label')
-        plt.show()
-        del output_imgs_np
-        return self
-'''
+    def _trans_data(self, data, label):
+        data = data.unsqueeze(0).to(device)
+        label = label.unsqueeze(0).to(device)
+        return data, label
