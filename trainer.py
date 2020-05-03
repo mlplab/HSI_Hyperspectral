@@ -4,6 +4,7 @@
 import os
 import numpy as np
 from tqdm import tqdm
+from tqdm import tqdm_notebook
 from datetime import datetime
 from collections import OrderedDict
 import torch
@@ -135,3 +136,57 @@ class Deeper_Trainer(Trainer):
             self.optimizer.step()
         show_loss = torch.nn.functional.mse_loss(output, labels)
         return show_loss
+
+
+class Colab_Trainer(Trianer):
+
+    def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
+
+        if init_epoch is None:
+            init_epoch = 0
+        elif isinstance(init_epoch, int):
+            assert 'Please enter int to init_epochs'
+
+        # _, columns = os.popen('stty size', 'r').read().split()
+        # columns = int(columns) // 2
+        columns = 200
+
+        for epoch in range(init_epoch, epochs):
+            dt_now = datetime.now()
+            print(dt_now)
+            self.model.train()
+            mode = 'Train'
+            train_loss = []
+            val_loss = []
+            desc_str = f'{mode:>5} Epoch: {epoch + 1:05d} / {epochs:05d}'
+            with tqdm_notebook(train_dataloader, desc=desc_str, unit='step', ascii=True) as pbar:
+                for i, (inputs, labels) in enumerate(pbar):
+                    inputs, labels = self._trans_data(inputs, labels)
+                    loss = self._step(inputs, labels)
+                    train_loss.append(loss.item())
+                    psnr_show = psnr(loss)
+                    self._step_show(pbar, Loss=f'{loss:.7f}', PSNR=f'{psnr_show:.7f}')
+                    torch.cuda.empty_cache()
+            mode = 'Val'
+            self.model.eval()
+            desc_str = f'{mode:>5} Epoch: {epoch + 1:05d} / {epochs:05d}'
+            with tqdm_notebook(val_dataloader, desc=desc_str, unit='step', ascii=True) as pbar:
+                for i, (inputs, labels) in enumerate(pbar):
+                    inputs, labels = self._trans_data(inputs, labels)
+                    with torch.no_grad():
+                        loss = self._step(inputs, labels, train=False)
+                    val_loss.append(loss.item())
+                    psnr_show = psnr(loss)
+                    self._step_show(pbar, Loss=f'{loss:.7f}', PSNR=f'{psnr_show:.7f}')
+                    torch.cuda.empty_cache()
+            # train_loss = np.mean(train_loss)
+            # val_loss = np.mean(val_loss)
+            if self.callbacks:
+                for callback in self.callbacks:
+                    callback.callback(self.model, epoch, loss=train_loss,
+                                      val_loss=val_loss, save=True, device=device, optim=self.optimizer)
+            if self.scheduler is not None:
+                self.scheduler.step()
+            print('-' * int(columns))
+
+        return self

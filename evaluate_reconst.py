@@ -2,14 +2,14 @@
 
 
 import os
-from tqdm import tqdm
-import shutil
-import scipy.io
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+# from tqdm import tqdm
+# import shutil
+# import scipy.io
+# import numpy as np
+# import pandas as pd
+# import matplotlib.pyplot as plt
 import torch
-import torchvision
+# import torchvision
 from data_loader import HyperSpectralDataset
 # from model.unet import UNet
 # from model.unet_copy import Deeper_UNet
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     img_path = 'dataset/'
     test_path = os.path.join(img_path, 'test')
-    test_dataset = HyperSpectralDataset(test_path, os.path.join(img_path, 'test_mask.mat'), data_key='im', transform=None)
+    test_dataset = HyperSpectralDataset(test_path, os.path.join(img_path, 'test_mask.mat'), transform=None)
     # g_model = UNet(25, 24).to(device)
     # g_model = Deeper_UNet(25, 24, hcr=True).to(device)
     # g_model.load_state_dict(torch.load('deeper_unet_trained_0421.pth', map_location=torch.device('cpu')))

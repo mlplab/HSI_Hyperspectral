@@ -45,6 +45,26 @@ def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
     return None
 
 
+def patch_mask(mask_path, save_path, size=256, ch=24, data_key='data'):
+
+    if os.path.exists(save_path) is True:
+        shutil.rmtree(save_path)
+    os.path.mkdir(save_path)
+
+    data = scipy.io.loadmat(mask_path)['data']
+    data = np.expand_dims(np.asarray(data, dtype=np.float32).transpose([2, 0, 1]), axis=0)
+    tensor_data = torch.as_tensor(data)
+    patch_data = tensor_data.unfold(2, size, size).unfold(3, size, size)
+    patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
+    for i in range(patch_data.size()[0]):
+        save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
+        save_name = os.path.join(save_path, f'mask_{i}.mat')
+        scipy.io.savemat(save_name, {'data': save_data})
+
+    return None
+
+
+
 def plot_img(output_imgs, title):
     plt.imshow(output_imgs)
     plt.title('Predict')
@@ -109,7 +129,7 @@ class ModelCheckPoint(object):
             self.colab2drive_flag = False
 
     def callback(self, model, epoch, *args, **kwargs):
-        if 'loss' not in kwargs.keys() and 'val_loss' not in kwargs.keys():
+        if 'loss' not in kwargs and 'val_loss' not in kwargs:
             assert 'None Loss'
         else:
             loss = kwargs['loss']
@@ -122,7 +142,7 @@ class ModelCheckPoint(object):
         if epoch % self.partience == 0:
             torch.save({'model': model.state_dict(), 'epoch': epoch, 'loss': loss,
                         'val_loss': val_loss,
-                        'optim': kwargs['optim'].state_dict()} , checkpoint_name)
+                        'optim': kwargs['optim'].state_dict()}, checkpoint_name)
             if self.verbose is True:
                 print(f'CheckPoint Saved by {checkpoint_name}')
         if self.colab2drive_flag is True and epoch == self.colab2drive[self.colab2drive_idx]:
@@ -161,7 +181,7 @@ class PlotStepLoss(object):
             plt.xlabel('Step')
             plt.ylabel('MSE')
             plt.savefig(checkpoint_name)
-            plt.clf()
+            plt.close()
         return self
 
 
@@ -325,7 +345,7 @@ class RefineEvaluater(Evaluater):
         plt.clf()
 
 
-# TODO
+# FIXME
 class Draw_Output(object):
 
     def __init__(self, img_path, output_data, save_path='output', verbose=False, nrow=8):
@@ -414,6 +434,8 @@ class Draw_Output(object):
         plt.show()
         del output_imgs_np
         return self
+
+
 '''
 
 class Draw_Output(object):
