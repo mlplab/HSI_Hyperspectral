@@ -49,7 +49,7 @@ def patch_mask(mask_path, save_path, size=256, ch=24, data_key='data'):
 
     if os.path.exists(save_path) is True:
         shutil.rmtree(save_path)
-    os.path.mkdir(save_path)
+    os.mkdir(save_path)
 
     data = scipy.io.loadmat(mask_path)['data']
     data = np.expand_dims(np.asarray(data, dtype=np.float32).transpose([2, 0, 1]), axis=0)
