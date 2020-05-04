@@ -139,14 +139,14 @@ class ModelCheckPoint(object):
 
         epoch += 1
         if epoch % self.partience == 0:
-            torch.save({'model': model.state_dict(), 'epoch': epoch, 'loss': loss,
+            torch.save({'model_state_dict': model.state_dict(), 'epoch': epoch, 'loss': loss,
                         'val_loss': val_loss,
                         'optim': kwargs['optim'].state_dict()}, checkpoint_name)
             if self.verbose is True:
                 print(f'CheckPoint Saved by {checkpoint_name}')
         if self.colab2drive_flag is True and epoch == self.colab2drive[self.colab2drive_idx]:
             colab2drive_path = os.path.join(self.colab2drive_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
-            torch.save({'model': model.state_dict(), 'epoch': epoch, 'loss': loss,
+            torch.save({'model_state_dict': model.state_dict(), 'epoch': epoch, 'loss': loss,
                         'val_loss': val_loss,
                         'optim': kwargs['optim'].state_dict()}, colab2drive_path)
             self.colab2drive_idx += 1
@@ -216,15 +216,17 @@ class Evaluater(object):
         torchvision.utils.save_image(output_img, os.path.join(self.save_alls_path, f'out_and_label_{i}.png'), nrow=3, padding=10)
         return self
 
-    def _save_diff(self, i, output, labels):
+    def _save_diff(self, i, output, labels, ch=10):
         _, c, h, w = output.size()
-        diff = torch.mean(torch.abs(output - labels), dim=1)
+        output = output[:, ch].squeeze()
+        labels = labels[:, ch].squeeze()
+        diff = torch.abs(output - labels)
         diff = diff.to('cpu').detach().numpy().copy()
         diff = diff.reshape(h, w)
         plt.imshow(diff, cmap='jet')
         plt.colorbar()
         plt.savefig(os.path.join(self.save_diff_path, f'diff_{i}.png'))
-        plt.clf()
+        plt.close()
 
     def _save_mat(self, i, output):
         output_mat = output.squeeze().to('cpu').detach().numpy().copy()
