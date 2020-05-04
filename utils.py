@@ -268,7 +268,6 @@ class ReconstEvaluater(Evaluater):
         return self
 
 
-# FIXME
 class Draw_Output(object):
 
     def __init__(self, dataset, *args, save_path='output', partience=5,
