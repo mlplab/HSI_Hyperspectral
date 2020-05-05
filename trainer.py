@@ -63,8 +63,8 @@ class Trainer(object):
                     loss, output = self._step(inputs, labels)
                     train_loss.append(loss.item())
                     # psnr_show = psnr(loss)
-                    evaluate = [self.psnr(labels, output), self.ssim(labels, output), self.sam(labels, output)]
-                    self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=f'{evaluate}')
+                    evaluate = f'{self.psnr(labels, output):.7f}, {self.ssim(labels, output):.7f}, {self.sam(labels, output):.7f}'
+                    self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             mode = 'Val'
             self.model.eval()
@@ -75,8 +75,8 @@ class Trainer(object):
                     with torch.no_grad():
                         loss, output = self._step(inputs, labels, train=False)
                     val_loss.append(loss.item())
-                    evaluate = [self.psnr(labels, output), self.ssim(labels, output), self.sam(labels, output)]
-                    self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=f'{evaluate}')
+                    evaluate = f'{self.psnr(labels, output):.7f}, {self.ssim(labels, output):.7f}, {self.sam(labels, output):.7f}'
+                    self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             if self.callbacks:
                 for callback in self.callbacks:
