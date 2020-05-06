@@ -4,7 +4,6 @@
 import os
 import shutil
 import scipy.io
-import spectral
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -294,7 +293,7 @@ class ReconstEvaluater(Evaluater):
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(output, labels)
                         # evaluate_list.append(np.round(metrics.item(), decimals=7))
-                        evaluate_list.append(int(f'{metrics.item():.7f}'))
+                        evaluate_list.append(f'{metrics.item():.7f}')
                     self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
                     # self._save_img(i, inputs, output, labels)

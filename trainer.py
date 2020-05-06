@@ -63,7 +63,7 @@ class Trainer(object):
                     loss, output = self._step(inputs, labels)
                     train_loss.append(loss.item())
                     # psnr_show = psnr(loss)
-                    evaluate = [int(f'{self.psnr(labels, output):.7f}'), int(f'{self.ssim(labels, output):.7f}'), int(f'{self.sam(labels, output):.7f}')]
+                    evaluate = [f'{self.psnr(labels, output):.7f}', f'{self.ssim(labels, output):.7f}', f'{self.sam(labels, output):.7f}']
                     self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             mode = 'Val'
