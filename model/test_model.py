@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import My_HSI_network, swish, mish, RAM, HSI_prior_block
+from .layers import My_HSI_network, swish, mish, RAM, HSI_prior_block
 
 
 device = 'cpu'

@@ -6,7 +6,7 @@ Hyperspectral Image Prior Network Model
 
 import torch
 from torchsummary import summary
-from layers import swish, mish, HSI_prior_block
+from .layers import swish, mish, HSI_prior_block
 
 
 class HIPN(torch.nn.Module):
