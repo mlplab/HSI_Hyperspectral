@@ -218,34 +218,35 @@ class My_HSI_network(torch.nn.Module):
         return x
 
 
-class Global_Variance_Pooling(torch.nn.Module):
+class GVP(torch.nn.Module):
 
     def forward(self, x):
         batch_size, ch, h, w = x.size()
-        avg_x = torch.nn.functional.avg_pool2d(x, kernel=(h, w))
-        var_x = torch.nn.functional.avg_pool2d((x - avg_x) ** 2, kernel=(h, w))
+        avg_x = torch.nn.functional.avg_pool2d(x, kernel_size=(h, w))
+        var_x = torch.nn.functional.avg_pool2d((x - avg_x) ** 2, kernel_size=(h, w))
         return var_x
 
 
 class RAM(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, raito=None):
+    def __init__(self, input_ch, output_ch, ratio=None):
         super(RAM, self).__init__()
 
-        if raito is None:
-            self.raito = 2
+        if ratio is None:
+            self.ratio = 2
         else:
-            self.raito = raito
+            self.ratio = ratio
         self.spatial_attn = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1, groups=input_ch)
-        self.spectral_pooling = Global_Variance_Pooling()
-        self.spectral_Linear = torch.nn.Linear(input_ch, input_ch // raito)
-        self.spectral_attn = torch.nn.Linear(input_ch // raito, output_ch)
+        self.spectral_pooling = GVP()
+        self.spectral_Linear = torch.nn.Linear(input_ch, input_ch // ratio)
+        self.spectral_attn = torch.nn.Linear(input_ch // ratio, output_ch)
 
     def forward(self, x):
-        spatial_attn = self.spectral_attn(x)
-        spectral_pooling = self.spectral_pooling(x)
+        batch_size, ch, h, w = x.size()
+        spatial_attn = self.spatial_attn(x)
+        spectral_pooling = self.spectral_pooling(x).view(-1, ch)
         spectral_linear = torch.relu(self.spectral_Linear(spectral_pooling))
-        spectral_attn = self.spectral_attn(spectral_linear)
+        spectral_attn = self.spectral_attn(spectral_linear).unsqueeze(-1).unsqueeze(-1)
 
         attn_output = torch.sigmoid(spatial_attn + spectral_attn)
         output = attn_output * x

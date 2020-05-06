@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import My_HSI_network, swish, mish, RAM
+from layers import My_HSI_network, swish, mish, RAM, HSI_prior_block
 
 
 device = 'cpu'
@@ -12,7 +12,7 @@ device = 'cpu'
 class DW_SP_Model(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, *args, feature=64, block_num=9, **kwargs):
-        super(Test_Model, self).__init__()
+        super(DW_SP_Model, self).__init__()
 
         # keys = kwargs.keys()
         self.activation = None
@@ -68,7 +68,7 @@ class DW_SP_Model(torch.nn.Module):
 class Attention_HSI_Model(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, feature=64, block_num=9, activation='relu', output_norm=None):
-        super(Attention_HSI_Network, self).__init__()
+        super(Attention_HSI_Model, self).__init__()
         self.activation = activation
         self.output_norm = output_norm
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
@@ -115,5 +115,7 @@ class Attention_HSI_Model(torch.nn.Module):
 
 if __name__ == '__main__':
 
-    model = Test_Model(1, 31, output_norm=None).to(device)
+    model = DW_SP_Model(1, 31, output_norm=None).to(device)
+    summary(model, (1, 64, 64))
+    model = Attention_HSI_Model(1, 31, output_norm=None).to(device)
     summary(model, (1, 64, 64))
