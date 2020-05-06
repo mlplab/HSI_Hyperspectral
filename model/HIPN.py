@@ -66,7 +66,7 @@ class HSI_Network(torch.nn.Module):
         residual_block = []
         shortcut = []
         for _ in range(block_num):
-            hsi_block.append(HSI_prior_block(output_ch, feature, output_ch))
+            hsi_block.append(HSI_prior_block(output_ch, output_ch, feature=feature))
             residual_block.append(torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0))
             shortcut.append(torch.nn.Identity())
         self.hsi_block = torch.nn.Sequential(*hsi_block)

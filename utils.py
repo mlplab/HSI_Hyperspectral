@@ -4,6 +4,7 @@
 import os
 import shutil
 import scipy.io
+import spectral
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -21,7 +22,12 @@ def normalize(x):
     return (x - x.min()) / (x.max() - x.min())
 
 
-def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
+def psnr(loss):
+
+    return 20 * torch.log10(1 / torch.sqrt(loss))
+
+
+def make_patch(data_path, save_path, size=256, step=256, ch=24, data_key='data'):
 
     if os.path.exists(save_path):
         shutil.rmtree(save_path)
@@ -35,17 +41,17 @@ def make_patch(data_path, save_path, size=256, ch=24, data_key='data'):
         data = normalize(data)
         data = np.expand_dims(np.asarray(data, np.float32).transpose([2, 0, 1]), axis=0)
         tensor_data = torch.as_tensor(data)
-        patch_data = tensor_data.unfold(2, size, size).unfold(3, size, size)
+        patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
         patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
         for i in range(patch_data.size()[0]):
             save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
-            save_name = os.path.join(save_path, f'{idx}_{i}.mat')
+            save_name = os.path.join(save_path, f'{idx}_{i:05d}.mat')
             scipy.io.savemat(save_name, {'data': save_data})
 
     return None
 
 
-def patch_mask(mask_path, save_path, size=256, ch=24, data_key='data'):
+def patch_mask(mask_path, save_path, size=256, step=256, ch=24, data_key='data'):
 
     if os.path.exists(save_path) is True:
         shutil.rmtree(save_path)
@@ -54,28 +60,14 @@ def patch_mask(mask_path, save_path, size=256, ch=24, data_key='data'):
     data = scipy.io.loadmat(mask_path)['data']
     data = np.expand_dims(np.asarray(data, dtype=np.float32).transpose([2, 0, 1]), axis=0)
     tensor_data = torch.as_tensor(data)
-    patch_data = tensor_data.unfold(2, size, size).unfold(3, size, size)
+    patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
     patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
     for i in range(patch_data.size()[0]):
         save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
-        save_name = os.path.join(save_path, f'mask_{i}.mat')
+        save_name = os.path.join(save_path, f'mask_{i:05d}.mat')
         scipy.io.savemat(save_name, {'data': save_data})
 
     return None
-
-
-def plot_img(output_imgs, title):
-    plt.imshow(output_imgs)
-    plt.title('Predict')
-    plt.xticks(color="None")
-    plt.yticks(color="None")
-    plt.tick_params(length=0)
-    return None
-
-
-def psnr(loss):
-
-    return 20 * torch.log10(1 / torch.sqrt(loss))
 
 
 class RandomCrop(object):
@@ -228,6 +220,37 @@ class Evaluater(object):
         plt.savefig(os.path.join(self.save_diff_path, f'diff_{i}.png'))
         plt.close()
 
+    def _save_all(self, i, inputs, outputs, labels, ch=(21, 11, 5)):
+        save_alls_path = 'save_all'
+        _, c, h ,w = outputs.size()
+        diff = torch.abs(outputs[:, 10].squeeze() - labels[:, 10].squeeze())
+        diff = diff.numpy()
+        inputs = inputs.squeeze().numpy().transpose(1, 2, 0)
+        outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
+        labels = labels.squeeze().numpy().transpose(1, 2, 0)
+        figs = [inputs, outputs, labels]
+        titles = ['input', 'output', 'label']
+        fig_num = len(figs) + 1
+        plt.figure(figsize=(16, 9))
+        for j, (fig, title) in enumerate(zip(figs, titles)):
+            ax = plt.subplot(1, fig_num, j + 1)
+            im = ax.imshow(fig[:, :, ch])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_title(title)
+        ax = plt.subplot(1, fig_num, fig_num)
+        divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)
+        cax = divider.append_axes('right', '5%', pad='3%')
+        im = ax.imshow(diff, cmap='jet')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title('diff')
+        plt.colorbar(im, cax=cax)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.save_alls_path, f'output_alls_{i}.png'), bbox_inches='tight')
+        plt.close()
+        return self
+
     def _save_mat(self, i, output):
         output_mat = output.squeeze().to('cpu').detach().numpy().copy()
         output_mat = output_mat.transpose(1, 2, 0)
@@ -261,7 +284,7 @@ class ReconstEvaluater(Evaluater):
             # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
             with tqdm(dataset, ncols=columns, ascii=True) as pbar:
                 for i, (inputs, labels) in enumerate(pbar):
-                    evaluate_list = []
+                    evaluate_list = [f'i']
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
                     if hcr is True:
@@ -274,8 +297,9 @@ class ReconstEvaluater(Evaluater):
                         evaluate_list.append(int(f'{metrics.item():.7f}'))
                     self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
-                    self._save_img(i, inputs, output, labels)
-                    self._save_diff(i, output, labels)
+                    # self._save_img(i, inputs, output, labels)
+                    # self._save_diff(i, output, labels)
+                    self._save_all(i, inputs, output, labels)
                     self._save_mat(i, output)
         self._save_csv(output_evaluate, header)
 
