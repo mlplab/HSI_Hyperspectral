@@ -241,28 +241,42 @@ class Evaluater(object):
         output_evaluate_csv = pd.DataFrame(output_evaluate)
         output_evaluate_csv.to_csv(self.save_csv_path, header=header)
 
+    def _step_show(self, pbar, *args, **kwargs):
+        if device == 'cuda':
+            kwargs['Allocate'] = f'{torch.cuda.memory_allocated(0) / 1024 ** 3:.3f}GB'
+            kwargs['Cache'] = f'{torch.cuda.memory_cached(0) / 1024 ** 3:.3f}GB'
+        pbar.set_postfix(kwargs)
+        return self
+
 
 class ReconstEvaluater(Evaluater):
 
     def metrics(self, model, dataset, evaluate_fn, header=None, hcr=False):
         model.eval()
         output_evaluate = []
+        # _, columns = os.popen('stty size', 'r').read().split()
+        # columns = int(columns) // 2
+        columns = 200
         with torch.no_grad():
-            for i, (inputs, labels) in enumerate(tqdm(dataset)):
-                evaluate_list = []
-                inputs = inputs.unsqueeze(0).to(device)
-                labels = labels.unsqueeze(0).to(device)
-                if hcr is True:
-                    _, _, output = model(inputs)
-                else:
-                    output = model(inputs)
-                for metrics_func in evaluate_fn:
-                    metrics = metrics_func(output, labels)
-                    evaluate_list.append(np.round(metrics.item(), decimals=7))
-                output_evaluate.append(evaluate_list)
-                self._save_img(i, inputs, output, labels)
-                self._save_diff(i, output, labels)
-                self._save_mat(i, output)
+            # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
+            with tqdm(dataset, ncols=columns, ascii=True) as pbar:
+                for i, (inputs, labels) in enumerate(pbar):
+                    evaluate_list = []
+                    inputs = inputs.unsqueeze(0).to(device)
+                    labels = labels.unsqueeze(0).to(device)
+                    if hcr is True:
+                        _, _, output = model(inputs)
+                    else:
+                        output = model(inputs)
+                    for metrics_func in evaluate_fn:
+                        metrics = metrics_func(output, labels)
+                        # evaluate_list.append(np.round(metrics.item(), decimals=7))
+                        evaluate_list.append(int(f'{metrics.item():.7f}'))
+                    self._step_show(pbar, Metrics=evaluate_list)
+                    output_evaluate.append(evaluate_list)
+                    self._save_img(i, inputs, output, labels)
+                    self._save_diff(i, output, labels)
+                    self._save_mat(i, output)
         self._save_csv(output_evaluate, header)
 
         return self
