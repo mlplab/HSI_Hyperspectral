@@ -4,6 +4,7 @@
 import os
 import shutil
 import scipy.io
+from skimage.transform import rotate
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -90,15 +91,22 @@ class RandomCrop(object):
 class RandomHorizontalFlip(object):
 
     def __init__(self, rate=.5):
-        if rate:
-            self.rate = rate
-        else:
-            # self.rate = np.random.randn()
-            self.rate = .5
+        self.rate = rate
 
     def __call__(self, img):
-        if np.random.randn() < self.rate:
+        if np.random.random() < self.rate:
             img = img[:, ::-1, :].copy()
+        return img
+
+
+class RandomRotation(object):
+
+    def __init__(self, angle=[0, 90, 180, 270]):
+        self.angle = angle
+
+    def __call__(self, img):
+        idx = np.random.randint(len(self.angle))
+        img = rotate(img, angle=self.angle[idx])
         return img
 
 
@@ -176,6 +184,77 @@ class PlotStepLoss(object):
             plt.savefig(checkpoint_name)
             plt.close()
         return self
+
+
+class Draw_Output(object):
+
+    def __init__(self, dataset, *args, save_path='output', partience=5,
+                 verbose=False, ch=10, **kwargs):
+        '''
+        Parameters
+        ---
+        img_path: str
+            image dataset path
+        output_data: list
+            draw output data path
+        save_path: str(default: 'output')
+            output img path
+        verbose: bool(default: False)
+            verbose
+        '''
+        self.dataset = dataset
+        self.data_num = len(self.dataset)
+        self.save_path = save_path
+        self.partience = partience
+        self.verbose = verbose
+        self.ch = ch
+        self.diff = False
+        if 'diff' in kwargs:
+            self.diff = True
+
+        ###########################################################
+        # Make output directory
+        ###########################################################
+        if os.path.exists(save_path) is True:
+            shutil.rmtree(save_path)
+        os.mkdir(save_path)
+
+    def callback(self, model, epoch, *args, **kwargs):
+        keys = kwargs.keys()
+        if epoch % self.partience == 0:
+            epoch_save_path = os.path.join(self.save_path, f'epoch{epoch}')
+            os.makedirs(epoch_save_path, exist_ok=True)
+            output_save_path = os.path.join(epoch_save_path, 'output')
+            os.makedirs(output_save_path, exist_ok=True)
+            if self.diff is True:
+                diff_save_path = os.path.join(self.epoch_save_path, 'diff')
+                os.makedirs(diff_save_path, exist_ok=True)
+            model.eval()
+            with torch.no_grad():
+                for i, (data, label) in enumerate(self.dataset):
+                    data, label = self._trans_data(data, label)
+                    output = model(data)
+                    data_plot = normalize(data).unsqueeze(0)
+                    output_plot = normalize(output[self.ch, :, :]).unsqueeze(0)
+                    label_plot = normalize(label[self.ch, :, :]).unsqueeze(0)
+                    output_imgs = torch.cat([data_plot, output_plot, label_plot], dim=0)
+                    torchvision.utils.save_image(output_imgs, os.path.join(epoch_save_path, f'all_imgs_{i}.png'), padding=10)
+                    if self.diff is True:
+                        error = torch.abs(output_plot - label_plot).squeeze().numpy()
+                        plt.imshow(error, cmap='jet')
+                        plt.title('diff')
+                        plt.xticks(color='None')
+                        plt.yticks(color='None')
+                        plt.colorbar()
+                        plt.savefig(os.path.join(diff_save_path, 'diff_{i}.png'))
+                        plt.close()
+                    del output_imgs
+        return self
+
+    def _trans_data(self, data, label):
+        data = data.unsqueeze(0).to(device)
+        label = label.unsqueeze(0).to(device)
+        return data, label
 
 
 class Evaluater(object):
@@ -315,74 +394,3 @@ class ReconstEvaluater(Evaluater):
         self._save_csv(output_evaluate, header)
 
         return self
-
-
-class Draw_Output(object):
-
-    def __init__(self, dataset, *args, save_path='output', partience=5,
-                 verbose=False, ch=10, **kwargs):
-        '''
-        Parameters
-        ---
-        img_path: str
-            image dataset path
-        output_data: list
-            draw output data path
-        save_path: str(default: 'output')
-            output img path
-        verbose: bool(default: False)
-            verbose
-        '''
-        self.dataset = dataset
-        self.data_num = len(self.dataset)
-        self.save_path = save_path
-        self.partience = partience
-        self.verbose = verbose
-        self.ch = ch
-        self.diff = False
-        if 'diff' in kwargs:
-            self.diff = True
-
-        ###########################################################
-        # Make output directory
-        ###########################################################
-        if os.path.exists(save_path) is True:
-            shutil.rmtree(save_path)
-        os.mkdir(save_path)
-
-    def callback(self, model, epoch, *args, **kwargs):
-        keys = kwargs.keys()
-        if epoch % self.partience == 0:
-            epoch_save_path = os.path.join(self.save_path, f'epoch{epoch}')
-            os.makedirs(epoch_save_path, exist_ok=True)
-            output_save_path = os.path.join(epoch_save_path, 'output')
-            os.makedirs(output_save_path, exist_ok=True)
-            if self.diff is True:
-                diff_save_path = os.path.join(self.epoch_save_path, 'diff')
-                os.makedirs(diff_save_path, exist_ok=True)
-            model.eval()
-            with torch.no_grad():
-                for i, (data, label) in enumerate(self.dataset):
-                    data, label = self._trans_data(data, label)
-                    output = model(data)
-                    data_plot = normalize(data).unsqueeze(0)
-                    output_plot = normalize(output[self.ch, :, :]).unsqueeze(0)
-                    label_plot = normalize(label[self.ch, :, :]).unsqueeze(0)
-                    output_imgs = torch.cat([data_plot, output_plot, label_plot], dim=0)
-                    torchvision.utils.save_image(output_imgs, os.path.join(epoch_save_path, f'all_imgs_{i}.png'), padding=10)
-                    if self.diff is True:
-                        error = torch.abs(output_plot - label_plot).squeeze().numpy()
-                        plt.imshow(error, cmap='jet')
-                        plt.title('diff')
-                        plt.xticks(color='None')
-                        plt.yticks(color='None')
-                        plt.colorbar()
-                        plt.savefig(os.path.join(diff_save_path, 'diff_{i}.png'))
-                        plt.close()
-                    del output_imgs
-        return self
-
-    def _trans_data(self, data, label):
-        data = data.unsqueeze(0).to(device)
-        label = label.unsqueeze(0).to(device)
-        return data, label
