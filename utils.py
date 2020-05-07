@@ -9,12 +9,15 @@ import pandas as pd
 from tqdm import tqdm
 from PIL import Image
 from tqdm import tqdm
+import mpl_toolkits
+import mpl_toolkits.axes_grid1
 import matplotlib.pyplot as plt
 import torch
 import torchvision
 
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
 
 
 def normalize(x):
@@ -219,32 +222,44 @@ class Evaluater(object):
         plt.savefig(os.path.join(self.save_diff_path, f'diff_{i}.png'))
         plt.close()
 
-    def _save_all(self, i, inputs, outputs, labels, ch=(21, 11, 5)):
-        save_alls_path = 'save_all'
-        _, c, h ,w = outputs.size()
-        diff = torch.abs(outputs[:, 10].squeeze() - labels[:, 10].squeeze())
-        diff = diff.numpy()
-        inputs = inputs.squeeze().numpy().transpose(1, 2, 0)
-        outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
-        labels = labels.squeeze().numpy().transpose(1, 2, 0)
-        figs = [inputs, outputs, labels]
-        titles = ['input', 'output', 'label']
-        fig_num = len(figs) + 1
-        plt.figure(figsize=(16, 9))
-        for j, (fig, title) in enumerate(zip(figs, titles)):
-            ax = plt.subplot(1, fig_num, j + 1)
-            im = ax.imshow(fig[:, :, ch])
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_title(title)
-        ax = plt.subplot(1, fig_num, fig_num)
-        divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)
-        cax = divider.append_axes('right', '5%', pad='3%')
-        im = ax.imshow(diff, cmap='jet')
+    def _plot_img(self, ax, img, title='None', ch=None, colorbar=False):
+        if colorbar is not False:
+            divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)
+            cax = divider.append_axes('right', '5%', pad='3%')
+            im = ax.imshow(img, cmap='jet')
+            plt.colorbar(im, cax=cax)
+        elif ch is None:
+            im = ax.imshow(img)
+        else:
+            im = ax.imshow(img[:, :, ch])
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title('diff')
-        plt.colorbar(im, cax=cax)
+        ax.set_title(title)
+        return self
+
+    def _save_all(self, i, inputs, outputs, labels, ch=(21, 11, 5)):
+        save_alls_path = 'save_all'
+        _, c, h, w = outputs.size()
+        diff = torch.abs(outputs[:, 10].squeeze() - labels[:, 10].squeeze())
+        diff = diff.numpy()
+        diff = normalize(diff)
+        inputs = inputs.squeeze().numpy()
+        outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
+        labels = labels.squeeze().numpy().transpose(1, 2, 0)
+        inputs = normalize(inputs)
+        labels = normalize(labels)
+        outputs = normalize(outputs)
+        fig_num = 4
+        plt.figure(figsize=(16, 9))
+        ax = plt.subplot(1, 4, 1)
+        self._plot_img(ax, inputs, title='input')
+        figs = [outputs, labels]
+        titles = ['output', 'label']
+        for j, (fig, title) in enumerate(zip(figs, titles)):
+            ax = plt.subplot(1, fig_num, j + 2)
+            self._plot_img(ax, fig, title, ch)
+        ax = plt.subplot(1, fig_num, fig_num)
+        self._plot_img(ax, diff, title='diff', colorbar=True)
         plt.tight_layout()
         plt.savefig(os.path.join(self.save_alls_path, f'output_alls_{i}.png'), bbox_inches='tight')
         plt.close()
@@ -257,7 +272,7 @@ class Evaluater(object):
         return self
 
     def _save_csv(self, output_evaluate, header):
-        output_evaluate_np = np.array(output_evaluate)
+        output_evaluate_np = np.array(output_evaluate, dtype=np.float32)
         means = list(np.mean(output_evaluate_np, axis=0))
         output_evaluate.append(means)
         output_evaluate_csv = pd.DataFrame(output_evaluate)
@@ -283,7 +298,7 @@ class ReconstEvaluater(Evaluater):
             # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
             with tqdm(dataset, ncols=columns, ascii=True) as pbar:
                 for i, (inputs, labels) in enumerate(pbar):
-                    evaluate_list = [f'i']
+                    evaluate_list = [f'{i}']
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
                     if hcr is True:
@@ -292,12 +307,9 @@ class ReconstEvaluater(Evaluater):
                         output = model(inputs)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(output, labels)
-                        # evaluate_list.append(np.round(metrics.item(), decimals=7))
                         evaluate_list.append(f'{metrics.item():.7f}')
                     self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
-                    # self._save_img(i, inputs, output, labels)
-                    # self._save_diff(i, output, labels)
                     self._save_all(i, inputs, output, labels)
                     self._save_mat(i, output)
         self._save_csv(output_evaluate, header)
