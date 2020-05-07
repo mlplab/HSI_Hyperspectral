@@ -6,7 +6,7 @@ from torchsummary import summary
 from .layers import My_HSI_network, swish, mish, RAM, HSI_prior_block
 
 
-device = 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class DW_SP_Model(torch.nn.Module):
