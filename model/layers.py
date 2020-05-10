@@ -12,6 +12,10 @@ def mish(x):
     return x * torch.tanh(torch.nn.functional.softplus(x))
 
 
+def leaky_relu(x, gamma=.2):
+    return x if x >= 0 else -gamma * x
+
+
 class Swish(torch.nn.Module):
 
     def forward(self, x):
@@ -54,49 +58,6 @@ class D_Conv_Block(torch.nn.Module):
 
     def forward(self, x):
         return self.layer(x)
-
-
-class Bottoleneck(torch.nn.Module):
-
-    def __init__(self, input_ch, k):
-        super(Bottoleneck, self).__init__()
-        bottoleneck = []
-        bottoleneck.append(Conv_Block(input_ch, 128, 1, 1, 0))
-        bottoleneck.append(Conv_Block(128, k, 3, 1, 1))
-        self.bottoleneck = torch.nn.Sequential(*bottoleneck)
-
-    def forward(self, x):
-        return self.bottoleneck(x)
-
-
-class DenseBlock(torch.nn.Module):
-
-    def __init__(self, input_ch, k, layer_num):
-        super(DenseBlock, self).__init__()
-        bottoleneck = []
-        for i in range(layer_num):
-            bottoleneck.append(Bottoleneck(input_ch, k))
-            input_ch += k
-        self.bottoleneck = torch.nn.Sequential(*bottoleneck)
-
-    def forward(self, x):
-        for bottoleneck in self.bottoleneck:
-            growth = bottoleneck(x)
-            x = torch.cat((x, growth), dim=1)
-        return x
-
-
-class TransBlock(torch.nn.Module):
-
-    def __init__(self, input_ch, compress=.5):
-        super(TransBlock, self).__init__()
-        self.conv1_1 = Conv_Block(input_ch, int(input_ch * compress), 1, 1, 0, norm=False)
-        self.ave_pool = torch.nn.AvgPool2d(2, stride=2)
-
-    def forward(self, x):
-        x = self.conv1_1(x)
-        x = self.ave_pool(x)
-        return x
 
 
 class SA_Block(torch.nn.Module):
@@ -159,7 +120,6 @@ class DW_PT_Conv(torch.nn.Module):
         x = self.point(x)
         x = self._activation_fn(x)
         return x
-
 
 
 class HSI_prior_block(torch.nn.Module):
@@ -238,8 +198,8 @@ class RAM(torch.nn.Module):
             self.ratio = ratio
         self.spatial_attn = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1, groups=input_ch)
         self.spectral_pooling = GVP()
-        self.spectral_Linear = torch.nn.Linear(input_ch, input_ch // ratio)
-        self.spectral_attn = torch.nn.Linear(input_ch // ratio, output_ch)
+        self.spectral_Linear = torch.nn.Linear(input_ch, input_ch // self.ratio)
+        self.spectral_attn = torch.nn.Linear(input_ch // self.ratio, output_ch)
 
     def forward(self, x):
         batch_size, ch, h, w = x.size()
@@ -251,3 +211,33 @@ class RAM(torch.nn.Module):
         attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
         output = attn_output * x
         return output
+
+
+class Attention_HSI_prior_block(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, feature=64, **kwargs):
+        super(Attention_HSI_prior_block, self).__init__()
+        self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
+        self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
+        self.attention = RAM(output_ch, output_ch, ratio=kwargs.get('ratio'))
+        self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
+        self.activation = kwargs.get('activation')
+
+    def _activation_fn(self, x):
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return leaky_relu(x)
+        else:
+            return torch.relu(x)
+
+    def forward(self, x):
+        x_in = x
+        h = self._activation_fn(self.spatial_1(x))
+        h = self.spatial_2(h)
+        h = self.attention(h)
+        x = h + x_in
+        x = self.spectral(x)
+        return x
