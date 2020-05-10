@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import swish, mish, leaky_relu, Attention_HSI_prior_block
+from .layers import swish, mish, leaky_relu, Attention_HSI_prior_block
 
 
 class Attention_HSI_Model_2(torch.nn.Module):
@@ -27,7 +27,7 @@ class Attention_HSI_Model_2(torch.nn.Module):
         for hsi, residual in zip(self.hsi_block, self.residual_block):
             x_hsi = hsi(x)
             x_residual = residual(x)
-            x += x_in + x_hsi + x_residual
+            x = x_in + x_hsi + x_residual
         return self._output_norm_fn(x)
 
     def _activation_fn(self, x):
