@@ -10,8 +10,6 @@ from evaluate import ReconstEvaluater
 from pytorch_ssim import SSIM
 
 
-# device = 'cuda' if torch.cuda.is_available() else 'cpu'
-# torch.backends.cudnn.benchmark = True
 device = 'cpu'
 img_path = 'dataset/'
 test_path = os.path.join(img_path, 'test_patch_data')
@@ -37,6 +35,5 @@ if __name__ == '__main__':
     sam_evaluate = SAMMetrics().to(device)
     evaluate_fn = [rmse_evaluate, psnr_evaluate, ssim_evaluate, sam_evaluate]
 
-    # evaluate = Evaluater_Reconst('output_reconst_img', 'output_reconst_mat')
-    evaluate = ReconstEvaluater('output_HSI_prior_img', 'output_HSI_prior_mat', 'output_HSI_prior.csv')
+    evaluate = ReconstEvaluater(output_img_path, output_mat_path, output_csv_path)
     evaluate.metrics(model, test_dataset, evaluate_fn, ['ID', 'RMSE', 'PSNR', 'SSIM', 'SAM'], hcr=False)

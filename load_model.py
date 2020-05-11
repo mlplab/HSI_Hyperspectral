@@ -2,19 +2,21 @@
 
 
 import torch
-import torchvision
-# from torchsummary import summary
-from model.unet import UNet
-from model.discriminator import Discriminator
+from torchsummary import summary
+from model.layers import Attention_HSI_prior_block
+from model.layers import HSI_prior_block
+from model.layers import My_HSI_network
 
 
-g_model = UNet(25, 24)
-d_model = Discriminator([64, 128, 256, 512], (256, 256), 25, 24)
-x = torch.rand((1, 25, 256, 256))
-# output = g_model(x)
-# print(output.shape)
-output = d_model(x)
-print(output.shape)
+if __name__ == '__main__':
 
-# summary(g_model, (24, 256, 256))
-# summary(d_model, (24, 256, 256))
+    model = Attention_HSI_prior_block(31, 31)
+    summary(model, (31, 64, 64))
+    del model
+    model = HSI_prior_block(31, 31)
+    summary(model, (31, 64, 64))
+    del model
+    model = My_HSI_network(31, 31)
+    summary(model, (31, 64, 64))
+    optim = torch.optim.Adam(model, params=list(model.parameters()))
+    scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=50, gamma=.1)
