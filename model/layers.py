@@ -75,8 +75,7 @@ class SA_Block(torch.nn.Module):
         batch_size, ch, h, w = x.size()
         # theta path (first conv block)
         theta = self.theta(x)
-        theta = theta.view(batch_size, ch // 8, h *
-                           w).permute((0, 2, 1))  # (bs, HW, CH // 8)
+        theta = theta.view(batch_size, ch // 8, h * w).permute((0, 2, 1))  # (bs, HW, CH // 8)
         # phi path (second conv block)
         phi = self.phi(x)
         phi = torch.nn.functional.max_pool2d(phi, 2)
@@ -208,7 +207,8 @@ class RAM(torch.nn.Module):
         spectral_linear = torch.relu(self.spectral_Linear(spectral_pooling))
         spectral_attn = self.spectral_attn(spectral_linear).unsqueeze(-1).unsqueeze(-1)
 
-        attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
+        # attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
+        attn_output = torch.sigmoid(spatial_attn + spectral_attn)
         output = attn_output * x
         return output
 
@@ -241,3 +241,29 @@ class Attention_HSI_prior_block(torch.nn.Module):
         x = h + x_in
         x = self.spectral(x)
         return x
+
+
+class Global_Average_Pooling2d(torch.nn.Module):
+
+    def forward(self, x):
+        bs, ch, h, w = x.size()
+        return torch.nn.functional.avg_pool2d(x, kernel_size=(h, w))
+
+
+class SE_block(torch.nn.Module):
+
+    def __init__(self, input_ch, outupt_ch, **kwargs):
+        super(SE_block, self).__init__()
+        if 'ratio' is kwargs:
+            ratio = 2
+        else:
+            ratio = kwargs['ratio']
+        self.gap = Global_Average_Pooling2d()
+        self.squeeze = torch.nn.Linear(input_ch, output_ch // ratio)
+        self.extention = torch.nn.Linear(output_ch // ratio, output_ch)
+
+    def forward(self, x):
+        gap = self.gap(x)
+        squeeze = torch.relu(self.squeeze(gap))
+        attn = torch.sigmoid(self.extention(squeeze))
+        return x * attn.unsqueeze(-1).unsqueeze(-1)
