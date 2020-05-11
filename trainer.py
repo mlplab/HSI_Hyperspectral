@@ -81,7 +81,12 @@ class Trainer(object):
                     with torch.no_grad():
                         loss, output = self._step(inputs, labels, train=False)
                     val_loss.append(loss.item())
-                    evaluate = [f'{self.psnr(labels, output):.7f}', f'{self.ssim(labels, output):.7f}', f'{self.sam(labels, output):.7f}']
+                    # psnr_show = psnr(loss)
+                    show_val_eval.append([self.psnr(labels, output).item(),
+                                            self.ssim(labels, output).item(),
+                                            self.sam(labels, output).item()])
+                    show_mean = np.mean(show_val_eval, axis=0)
+                    evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             if self.callbacks:
