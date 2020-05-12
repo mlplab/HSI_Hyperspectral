@@ -46,8 +46,8 @@ class Trainer(object):
             assert 'Please enter int to init_epochs'
 
         # _, columns = os.popen('stty size', 'r').read().split()
-        # columns = int(columns) // 2
-        columns = 150
+        # columns = int(columns)
+        columns = 200
 
         for epoch in range(init_epoch, epochs):
             dt_now = datetime.now()
@@ -64,7 +64,6 @@ class Trainer(object):
                     inputs, labels = self._trans_data(inputs, labels)
                     loss, output = self._step(inputs, labels)
                     train_loss.append(loss.item())
-                    # psnr_show = psnr(loss)
                     show_train_eval.append([self.psnr(labels, output).item(),
                                             self.ssim(labels, output).item(),
                                             self.sam(labels, output).item()])
@@ -83,8 +82,8 @@ class Trainer(object):
                     val_loss.append(loss.item())
                     # psnr_show = psnr(loss)
                     show_val_eval.append([self.psnr(labels, output).item(),
-                                            self.ssim(labels, output).item(),
-                                            self.sam(labels, output).item()])
+                                          self.ssim(labels, output).item(),
+                                          self.sam(labels, output).item()])
                     show_mean = np.mean(show_val_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)

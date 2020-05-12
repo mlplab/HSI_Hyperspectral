@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from PIL import Image
-from tqdm import tqdm
 import mpl_toolkits
 import mpl_toolkits.axes_grid1
 import matplotlib.pyplot as plt

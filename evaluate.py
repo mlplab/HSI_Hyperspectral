@@ -1,8 +1,16 @@
 # coding: utf-8
 
 
+import os
+import shutil
+import scipy.io
 import numpy as np
-from skimage.measure import compare_mse, compare_psnr, compare_ssim
+import pandas as pd
+from tqdm import tqdm
+import mpl_toolkits
+import mpl_toolkits.axes_grid1
+import matplotlib.pyplot as plt
+# from skimage.measure import compare_mse, compare_psnr, compare_ssim
 from PIL import Image
 import torch
 import torchvision
@@ -40,10 +48,13 @@ class SAMMetrics(torch.nn.Module):
         super(SAMMetrics, self).__init__()
 
     def forward(self, x, y):
-        x_sqrt = torch.sqrt(torch.sum(x ** 2, dim=0))
-        y_sqrt = torch.sqrt(torch.sum(y ** 2, dim=0))
+        # x_sqrt = torch.sqrt(torch.sum(x * x, dim=0))
+        # y_sqrt = torch.sqrt(torch.sum(y * y, dim=0))
+        x_sqrt = torch.norm(x, dim=0)
+        y_sqrt = torch.norm(y, dim=0)
         xy = torch.sum(x * y, dim=0)
-        angle = torch.acos(xy / (x_sqrt * y_sqrt + 1e-7))
+        metrics = xy / (x_sqrt * y_sqrt + 1e-6)
+        angle = torch.acos(metrics)
         return torch.mean(angle)
 
 
