@@ -267,3 +267,44 @@ class SE_block(torch.nn.Module):
         squeeze = torch.relu(self.squeeze(gap))
         attn = torch.sigmoid(self.extention(squeeze))
         return x * attn.unsqueeze(-1).unsqueeze(-1)
+
+
+class Attention_GVP_HSI_prior_block(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, feature=64, **kwargs):
+        super(Attention_GVP_HSI_prior_block, self).__init__()
+        if 'ratio' is kwargs:
+            ratio = 2
+        else:
+            ratio = kwargs['ratio']
+        self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
+        self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
+        self.spatial_attention = RAM(output_ch, output_ch, ratio=kwargs.get('ratio'))
+        self.spectral_gvp = GVP()
+        self.spectral_linear1 = Linear(output_ch, int(output_ch * ratio))
+        self.spectral_linear2 = Linear(int(output_ch * ratio), output_ch)
+        self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
+        self.activation = kwargs.get('activation')
+
+    def _activation_fn(self, x):
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return leaky_relu(x)
+        else:
+            return torch.relu(x)
+
+    def forward(self, x):
+        x_in = x
+        h = self._activation_fn(self.spatial_1(x))
+        h = self.spatial_2(h)
+        h = self.attention(h)
+        x = h + x_in
+        x = self.spectral(x)
+        h_spectral = self.spectral_gvp(x)
+        h_spectral = self.spectral_linear1(h_spectral)
+        h_spectral = self.spectral_linear2(h_spectral)
+        x = h_spectral.unsqueeze(-1).unsqueeze(-1) + x
+        return x
