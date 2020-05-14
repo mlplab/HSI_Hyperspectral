@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import swish, mish, leaky_relu, Attention_HSI_prior_block, Attention_GVP_HSI_prior_block
+from .layers import swish, mish, leaky_relu, Attention_HSI_prior_block, Attention_GVP_HSI_prior_block
 
 
 class Attention_HSI_Model(torch.nn.Module):
@@ -41,18 +41,6 @@ class Attention_HSI_Model(torch.nn.Module):
             x_residual = residual(x)
             x = x_in + self.ita * x_hsi + x_residual
         return self._output_norm_fn(self.output_conv(x))
-
-    def _activation_fn(self, x):
-        if self.activation == 'relu':
-            return torch.relu(x)
-        elif self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return leaky_relu(x)
-        else:
-            return x
 
     def _output_norm_fn(self, x):
         if self.output_norm == 'sigmoid':

@@ -303,9 +303,9 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
     def forward(self, x):
         bs, ch, h, w = x.size()
         x_in = x
-        h = self._activation_fn(self.spatial_1(x))
-        h = self.spatial_2(h)
-        h = self.spatial_attention(h)
+        h_spatial = self._activation_fn(self.spatial_1(x))
+        h_spatial = self.spatial_2(h_spatial)
+        h_spatial = self.spatial_attention(h_spatial)
         x = h + x_in
         x = self.spectral(x)
         h_spectral = self.spectral_gvp(x)
