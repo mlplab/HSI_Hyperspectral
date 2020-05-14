@@ -36,4 +36,4 @@ if __name__ == '__main__':
     evaluate_fn = [rmse_evaluate, psnr_evaluate, ssim_evaluate, sam_evaluate]
 
     evaluate = ReconstEvaluater(output_img_path, output_mat_path, output_csv_path)
-    evaluate.metrics(model, test_dataset, evaluate_fn, ['ID', 'RMSE', 'PSNR', 'SSIM', 'SAM'], hcr=False)
+    evaluate.metrics(model, test_dataset, evaluate_fn, ['RMSE', 'PSNR', 'SSIM', 'SAM'], hcr=False)
