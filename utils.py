@@ -6,18 +6,13 @@ import shutil
 import scipy.io
 from skimage.transform import rotate
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
-from PIL import Image
-import mpl_toolkits
-import mpl_toolkits.axes_grid1
 import matplotlib.pyplot as plt
 import torch
 import torchvision
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-# device = 'cpu'
 
 
 def normalize(x):
@@ -136,7 +131,8 @@ class ModelCheckPoint(object):
             val_loss = kwargs['val_loss']
         loss = np.mean(loss)
         val_loss = np.mean(val_loss)
-        checkpoint_name = os.path.join(self.checkpoint_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
+        save_file = self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.7f}_valloss_{val_loss:.7f}.tar'
+        checkpoint_name = os.path.join(self.checkpoint_path, model_name)
 
         epoch += 1
         if epoch % self.partience == 0:
@@ -146,7 +142,7 @@ class ModelCheckPoint(object):
             if self.verbose is True:
                 print(f'CheckPoint Saved by {checkpoint_name}')
         if self.colab2drive_flag is True and epoch == self.colab2drive[self.colab2drive_idx]:
-            colab2drive_path = os.path.join(self.colab2drive_path, self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.5f}_valloss_{val_loss:.5f}.tar')
+            colab2drive_path = os.path.join(self.colab2drive_path, model_name)
             torch.save({'model_state_dict': model.state_dict(), 'epoch': epoch, 'loss': loss,
                         'val_loss': val_loss,
                         'optim': kwargs['optim'].state_dict()}, colab2drive_path)
