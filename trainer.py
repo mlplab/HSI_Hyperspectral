@@ -55,21 +55,19 @@ class Trainer(object):
             self.model.train()
             mode = 'Train'
             train_loss = []
-            show_train_eval = []
             val_loss = []
-            show_val_eval = []
             desc_str = f'{mode:>5} Epoch: {epoch + 1:05d} / {epochs:05d}'
             with tqdm(train_dataloader, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
                 for i, (inputs, labels) in enumerate(pbar):
                     inputs, labels = self._trans_data(inputs, labels)
                     loss, output = self._step(inputs, labels)
                     train_loss.append(loss.item())
+                    show_loss = np.mean(train_loss)
                     show_train_eval.append([self.psnr(labels, output).item(),
                                             self.ssim(labels, output).item(),
                                             self.sam(labels, output).item()])
-                    show_mean = np.mean(show_train_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
-                    self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)
+                    self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             mode = 'Val'
             self.model.eval()
@@ -80,13 +78,13 @@ class Trainer(object):
                     with torch.no_grad():
                         loss, output = self._step(inputs, labels, train=False)
                     val_loss.append(loss.item())
+                    show_loss = np.mean(val_loss)
                     # psnr_show = psnr(loss)
                     show_val_eval.append([self.psnr(labels, output).item(),
                                           self.ssim(labels, output).item(),
                                           self.sam(labels, output).item()])
-                    show_mean = np.mean(show_val_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
-                    self._step_show(pbar, Loss=f'{loss:.7f}', Evaluate=evaluate)
+                    self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             if self.callbacks:
                 for callback in self.callbacks:
