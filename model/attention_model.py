@@ -11,7 +11,7 @@ class Attention_HSI_Model(torch.nn.Module):
     def __init__(self, input_ch, output_ch, feature=64, block_num=9, **kwargs):
         super(Attention_HSI_Model, self).__init__()
 
-        model = kwargs['mode']
+        mode = kwargs['mode']
         if mode == 'GVP':
             attention = Attention_GVP_HSI_prior_block
         else:
@@ -65,5 +65,6 @@ class Attention_HSI_Model(torch.nn.Module):
 
 if __name__ == '__main__':
 
-    model = Attention_HSI_Model_2(1, 31, 64, 3, activation='relu')
+    mode = 'GVP'
+    model = Attention_HSI_Model(1, 31, 64, 9, activation='relu', mode=mode)
     summary(model, (1, 64, 64))

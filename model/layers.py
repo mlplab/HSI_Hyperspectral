@@ -183,7 +183,7 @@ class GVP(torch.nn.Module):
         batch_size, ch, h, w = x.size()
         avg_x = torch.nn.functional.avg_pool2d(x, kernel_size=(h, w))
         var_x = torch.nn.functional.avg_pool2d((x - avg_x) ** 2, kernel_size=(h, w))
-        return var_x
+        return var_x.view(-1, ch)
 
 
 class RAM(torch.nn.Module):
@@ -255,15 +255,19 @@ class SE_block(torch.nn.Module):
     def __init__(self, input_ch, outupt_ch, **kwargs):
         super(SE_block, self).__init__()
         if 'ratio' is kwargs:
-            ratio = 2
-        else:
             ratio = kwargs['ratio']
-        self.gap = Global_Average_Pooling2d()
+        else:
+            ratio = 2
+        mode = kwargs.get('mode')
+        if mode == 'GVP':
+            self.pooling = GVP()
+        else:
+            self.pooling = Global_Average_Pooling2d()
         self.squeeze = torch.nn.Linear(input_ch, output_ch // ratio)
         self.extention = torch.nn.Linear(output_ch // ratio, output_ch)
 
     def forward(self, x):
-        gap = self.gap(x)
+        gap = self.pooling(x)
         squeeze = torch.relu(self.squeeze(gap))
         attn = torch.sigmoid(self.extention(squeeze))
         return x * attn.unsqueeze(-1).unsqueeze(-1)
@@ -274,15 +278,15 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
     def __init__(self, input_ch, output_ch, feature=64, **kwargs):
         super(Attention_GVP_HSI_prior_block, self).__init__()
         if 'ratio' is kwargs:
-            ratio = 2
-        else:
             ratio = kwargs['ratio']
+        else:
+            ratio = 2
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
         self.spatial_attention = RAM(output_ch, output_ch, ratio=kwargs.get('ratio'))
         self.spectral_gvp = GVP()
-        self.spectral_linear1 = Linear(output_ch, int(output_ch * ratio))
-        self.spectral_linear2 = Linear(int(output_ch * ratio), output_ch)
+        self.spectral_linear1 = torch.nn.Linear(output_ch, int(output_ch // ratio))
+        self.spectral_linear2 = torch.nn.Linear(int(output_ch // ratio), output_ch)
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.activation = kwargs.get('activation')
 
@@ -297,10 +301,11 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
             return torch.relu(x)
 
     def forward(self, x):
+        bs, ch, h, w = x.size()
         x_in = x
         h = self._activation_fn(self.spatial_1(x))
         h = self.spatial_2(h)
-        h = self.attention(h)
+        h = self.spatial_attention(h)
         x = h + x_in
         x = self.spectral(x)
         h_spectral = self.spectral_gvp(x)
