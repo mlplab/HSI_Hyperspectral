@@ -66,6 +66,7 @@ class Trainer(object):
                     show_train_eval.append([self.psnr(labels, output).item(),
                                             self.ssim(labels, output).item(),
                                             self.sam(labels, output).item()])
+                    show_mean = np.mean(show_train_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
@@ -83,6 +84,7 @@ class Trainer(object):
                     show_val_eval.append([self.psnr(labels, output).item(),
                                           self.ssim(labels, output).item(),
                                           self.sam(labels, output).item()])
+                    show_mean = np.mean(show_val_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
