@@ -24,7 +24,7 @@ class Attention_HSI_Model(torch.nn.Module):
         residual_block = []
         # shortcut_block = []
         for _ in range(block_num):
-            hsi_block.append(attention(output_ch, output_ch, activation='relu'))
+            hsi_block.append(attention(output_ch, output_ch, activation='relu', ratio=kwargs['ratio']))
             residual_block.append(torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0))
             # shortcut_block.append(torch.nn.Identity())
         self.hsi_block = torch.nn.Sequential(*hsi_block)

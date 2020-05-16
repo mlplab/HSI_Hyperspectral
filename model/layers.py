@@ -277,13 +277,12 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, feature=64, **kwargs):
         super(Attention_GVP_HSI_prior_block, self).__init__()
-        if 'ratio' is kwargs:
-            ratio = kwargs['ratio']
-        else:
+        ratio = kwargs.get('ratio')
+        if ratio is None:
             ratio = 2
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
-        self.spatial_attention = RAM(output_ch, output_ch, ratio=kwargs.get('ratio'))
+        self.spatial_attention = RAM(output_ch, output_ch, ratio=ratio)
         self.spectral_gvp = GVP()
         self.spectral_linear1 = torch.nn.Linear(output_ch, int(output_ch // ratio))
         self.spectral_linear2 = torch.nn.Linear(int(output_ch // ratio), output_ch)
@@ -307,9 +306,9 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
         h_spatial = self.spatial_2(h_spatial)
         h_spatial = self.spatial_attention(h_spatial)
         x = h + x_in
-        x = self.spectral(x)
+        x_spectral = self.spectral(x)
         h_spectral = self.spectral_gvp(x)
         h_spectral = self.spectral_linear1(h_spectral)
         h_spectral = self.spectral_linear2(h_spectral)
-        x = h_spectral.unsqueeze(-1).unsqueeze(-1) + x
+        x = h_spectral.unsqueeze(-1).unsqueeze(-1) * x_spectral
         return x
