@@ -283,9 +283,10 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
         self.spatial_attention = RAM(output_ch, output_ch, ratio=ratio)
-        self.spectral_gvp = GVP()
-        self.spectral_linear1 = torch.nn.Linear(output_ch, int(output_ch // ratio))
-        self.spectral_linear2 = torch.nn.Linear(int(output_ch // ratio), output_ch)
+        # self.spectral_gvp = GVP()
+        # self.spectral_linear1 = torch.nn.Linear(output_ch, int(output_ch // ratio))
+        # self.spectral_linear2 = torch.nn.Linear(int(output_ch // ratio), output_ch)
+        self.spectral_attention = SE_block(output_ch, output_ch, mode='GVP', ratio=ratio)
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.activation = kwargs.get('activation')
 
@@ -306,9 +307,11 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
         h_spatial = self.spatial_2(h_spatial)
         h_spatial = self.spatial_attention(h_spatial)
         x = h + x_in
-        x_spectral = self.spectral(x)
-        h_spectral = self.spectral_gvp(x)
-        h_spectral = self.spectral_linear1(h_spectral)
-        h_spectral = self.spectral_linear2(h_spectral)
-        x = h_spectral.unsqueeze(-1).unsqueeze(-1) * x_spectral
+        # x_spectral = self.spectral(x)
+        # h_spectral = self.spectral_gvp(x)
+        # h_spectral = self.spectral_linear1(h_spectral)
+        # h_spectral = self.spectral_linear2(h_spectral)
+        # x = h_spectral.unsqueeze(-1).unsqueeze(-1) * x_spectral
+        x = self.spectral_attention(x)
+        x = self.spectral(x)
         return x
