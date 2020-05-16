@@ -4,6 +4,7 @@
 import os
 import shutil
 import scipy.io
+import warnings
 import numpy as np
 import pandas as pd
 from time import time
@@ -11,12 +12,11 @@ from tqdm import tqdm
 import mpl_toolkits
 import mpl_toolkits.axes_grid1
 import matplotlib.pyplot as plt
-# from skimage.measure import compare_mse, compare_psnr, compare_ssim
 from PIL import Image
 import torch
 import torchvision
 import pytorch_ssim
-import warnings
+from utils import HSI2RGB
 
 
 warnings.simplefilter('ignore')
@@ -63,10 +63,7 @@ class Evaluater(object):
 
     def __init__(self, save_img_path='output_img', save_mat_path='output_mat', save_csv_path='output_csv', **kwargs):
         self.save_img_path = save_img_path
-        self.save_diff_path = os.path.join(save_img_path, 'diff')
         self.save_alls_path = os.path.join(save_img_path, 'alls')
-        self.save_output_path = os.path.join(save_img_path, 'output')
-        self.save_label_path = os.path.join(save_img_path, 'label')
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
         self.ch = None
@@ -78,10 +75,7 @@ class Evaluater(object):
         if os.path.exists(save_img_path) is True:
             shutil.rmtree(save_img_path)
         os.mkdir(save_img_path)
-        os.mkdir(self.save_diff_path)
         os.mkdir(self.save_alls_path)
-        os.mkdir(self.save_label_path)
-        os.mkdir(self.save_output_path)
         if os.path.exists(save_mat_path) is True:
             shutil.rmtree(save_mat_path)
         os.mkdir(save_mat_path)
@@ -174,7 +168,147 @@ class Evaluater(object):
         return self
 
 
+class Evaluater_HSI2RGB(object):
+
+    def __init__(self, save_img_path='output_img', save_mat_path='output_mat', save_csv_path='output_csv', filter_name='filter.mat', **kwargs):
+        super(Evaluater_HSI2RGB, self).__init__(save_img_path, save_mat_path, save_csv_path, kwargs)
+        self.hsi2rgb = HSI2RGB(filter_name)
+
+    def _save_all(self, i, inputs, outputs, labels):
+        save_alls_path = 'save_all'
+        _, c, h, w = outputs.size()
+        diff = torch.abs(outputs[:, diff_ch].squeeze() - labels[:, diff_ch].squeeze())
+        diff = diff.numpy()
+        diff = normalize(diff)
+        inputs = inputs.squeeze().numpy()
+        outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
+        labels = labels.squeeze().numpy().transpose(1, 2, 0)
+        inputs = normalize(inputs)
+        labels = normalize(labels)
+        outputs = normalize(outputs)
+        fig_num = 4
+        plt.figure(figsize=(16, 9))
+        ax = plt.subplot(1, 4, 1)
+        # self._plot_img(ax, inputs, title='input')
+        im = ax.imshow(inputs)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title('input')
+        figs = [outputs, labels]
+        titles = ['output', 'label']
+        for j, (fig, title) in enumerate(zip(figs, titles)):
+            ax = plt.subplot(1, fig_num, j + 2)
+            self._plot_img(ax, fig, title)
+        ax = plt.subplot(1, fig_num, fig_num)
+        self._plot_img(ax, diff, title='diff', colorbar=True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.save_alls_path, f'output_alls_{i}.png'), bbox_inches='tight')
+        plt.close()
+        return self
+
+    def _plot_img(self, ax, img, title='None', colorbar=False):
+        if colorbar is not False:
+            divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)
+            cax = divider.append_axes('right', '5%', pad='3%')
+            im = ax.imshow(img, cmap='jet')
+            plt.colorbar(im, cax=cax)
+        else:
+            img = self.hsi2rgb.callback(img)
+            im = ax.imshow(img)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(title)
+        return self
+
+
 class ReconstEvaluater(Evaluater):
+
+    def metrics(self, model, dataset, evaluate_fn, header=None, hcr=False):
+        model.eval()
+        output_evaluate = []
+        # _, columns = os.popen('stty size', 'r').read().split()
+        # columns = int(columns) // 2
+        columns = 200
+        with torch.no_grad():
+            # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
+            with tqdm(dataset, ncols=columns, ascii=True) as pbar:
+                for i, (inputs, labels) in enumerate(pbar):
+                    evaluate_list = [f'{i}']
+                    inputs = inputs.unsqueeze(0).to(device)
+                    labels = labels.unsqueeze(0).to(device)
+                    step_time = time()
+                    if hcr is True:
+                        _, _, output = model(inputs)
+                    else:
+                        output = model(inputs)
+                    output_time = time() - step_time
+                    for metrics_func in evaluate_fn:
+                        metrics = metrics_func(output, labels)
+                        evaluate_list.append(f'{metrics.item():.7f}')
+                    evaluate_list.append(f'{output_time:.5f}')
+                    self._step_show(pbar, Metrics=evaluate_list)
+                    output_evaluate.append(evaluate_list)
+                    self._save_all(i, inputs, output, labels)
+                    self._save_mat(i, output)
+        self._save_csv(output_evaluate, header)
+
+        return self
+
+
+class Evaluater_HSI2RGB(object):
+
+    def __init__(self, save_img_path='output_img', save_mat_path='output_mat', save_csv_path='output_csv', filter_name='filter.mat', **kwargs):
+        super(Evaluater_HSI2RGB, self).__init__(save_img_path, save_mat_path, save_csv_path, kwargs)
+        self.hsi2rgb = HSI2RGB(filter_name)
+
+    def _save_all(self, i, inputs, outputs, labels):
+        save_alls_path = 'save_all'
+        _, c, h, w = outputs.size()
+        diff = torch.abs(outputs[:, diff_ch].squeeze() - labels[:, diff_ch].squeeze())
+        diff = diff.numpy()
+        diff = normalize(diff)
+        inputs = inputs.squeeze().numpy()
+        outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
+        labels = labels.squeeze().numpy().transpose(1, 2, 0)
+        inputs = normalize(inputs)
+        labels = normalize(labels)
+        outputs = normalize(outputs)
+        fig_num = 4
+        plt.figure(figsize=(16, 9))
+        ax = plt.subplot(1, 4, 1)
+        # self._plot_img(ax, inputs, title='input')
+        im = ax.imshow(inputs)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title('input')
+        figs = [outputs, labels]
+        titles = ['output', 'label']
+        for j, (fig, title) in enumerate(zip(figs, titles)):
+            ax = plt.subplot(1, fig_num, j + 2)
+            self._plot_img(ax, fig, title)
+        ax = plt.subplot(1, fig_num, fig_num)
+        self._plot_img(ax, diff, title='diff', colorbar=True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.save_alls_path, f'output_alls_{i}.png'), bbox_inches='tight')
+        plt.close()
+        return self
+
+    def _plot_img(self, ax, img, title='None', colorbar=False):
+        if colorbar is not False:
+            divider = mpl_toolkits.axes_grid1.make_axes_locatable(ax)
+            cax = divider.append_axes('right', '5%', pad='3%')
+            im = ax.imshow(img, cmap='jet')
+            plt.colorbar(im, cax=cax)
+        else:
+            img = self.hsi2rgb.callback(img)
+            im = ax.imshow(img)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(title)
+        return self
+
+
+class ReconstEvaluater_HSI2RGB(Evaluater_HSI2RGB):
 
     def metrics(self, model, dataset, evaluate_fn, header=None, hcr=False):
         model.eval()

@@ -250,3 +250,18 @@ class Draw_Output(object):
         data = data.unsqueeze(0).to(device)
         label = label.unsqueeze(0).to(device)
         return data, label
+
+
+class HSI2RGB(object):
+
+    def __init__(self, filter_path, data_key='T'):
+        self.filter = scipy.io.loadmat(filter_path)['T']
+        self.HSI_ch = self.filter.shape[0]
+        self.RGB_ch = self.filter.shape[1]
+
+    def callback(self, HSI_img, uint=False):
+        HSI_img_np = np.array(HSI_img)
+        RGB_img = HSI_img_np.dot(self.filter)
+        if uint is True:
+            RGB_img = np.array(normalize(RGB_img) * 255., dtype=np.uint8)
+        return RGB_img
