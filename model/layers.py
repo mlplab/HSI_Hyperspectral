@@ -273,20 +273,24 @@ class SE_block(torch.nn.Module):
         return x * attn.unsqueeze(-1).unsqueeze(-1)
 
 
-class Attention_GVP_HSI_prior_block(torch.nn.Module):
+class Attention_SE_HSI_prior_block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, feature=64, **kwargs):
         super(Attention_GVP_HSI_prior_block, self).__init__()
         ratio = kwargs.get('ratio')
         if ratio is None:
             ratio = 2
+        mode = kwargs.get('mode')
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
         self.spatial_attention = RAM(output_ch, output_ch, ratio=ratio)
         # self.spectral_gvp = GVP()
         # self.spectral_linear1 = torch.nn.Linear(output_ch, int(output_ch // ratio))
         # self.spectral_linear2 = torch.nn.Linear(int(output_ch // ratio), output_ch)
-        self.spectral_attention = SE_block(output_ch, output_ch, mode='GVP', ratio=ratio)
+        if mode is not None:
+            self.spectral_attention = SE_block(output_ch, output_ch, mode=mode, ratio=ratio)
+        else:
+            self.spatial_attention = torch.nn.Identity()
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.activation = kwargs.get('activation')
 
@@ -312,6 +316,6 @@ class Attention_GVP_HSI_prior_block(torch.nn.Module):
         # h_spectral = self.spectral_linear1(h_spectral)
         # h_spectral = self.spectral_linear2(h_spectral)
         # x = h_spectral.unsqueeze(-1).unsqueeze(-1) * x_spectral
-        x = self.spectral_attention(x)
         x = self.spectral(x)
+        x = self.spectral_attention(x)
         return x
