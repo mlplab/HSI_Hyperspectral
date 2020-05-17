@@ -107,7 +107,7 @@ class RandomRotation(object):
 class ModelCheckPoint(object):
 
     def __init__(self, checkpoint_path, model_name, mkdir=False, partience=1, verbose=True, *args, **kwargs):
-        self.checkpoint_path = checkpoint_path
+        self.checkpoint_path = os.path.join(checkpoint_path, model_name)
         self.model_name = model_name
         self.partience = partience
         self.verbose = verbose
@@ -132,7 +132,7 @@ class ModelCheckPoint(object):
         loss = np.mean(loss)
         val_loss = np.mean(val_loss)
         save_file = self.model_name + f'_epoch_{epoch:05d}_loss_{loss:.7f}_valloss_{val_loss:.7f}.tar'
-        checkpoint_name = os.path.join(self.checkpoint_path, model_name)
+        checkpoint_name = os.path.join(self.checkpoint_path, save_file)
 
         epoch += 1
         if epoch % self.partience == 0:
@@ -142,7 +142,7 @@ class ModelCheckPoint(object):
             if self.verbose is True:
                 print(f'CheckPoint Saved by {checkpoint_name}')
         if self.colab2drive_flag is True and epoch == self.colab2drive[self.colab2drive_idx]:
-            colab2drive_path = os.path.join(self.colab2drive_path, model_name)
+            colab2drive_path = os.path.join(self.colab2drive_path, save_file)
             torch.save({'model_state_dict': model.state_dict(), 'epoch': epoch, 'loss': loss,
                         'val_loss': val_loss,
                         'optim': kwargs['optim'].state_dict()}, colab2drive_path)
@@ -261,7 +261,7 @@ class HSI2RGB(object):
 
     def callback(self, HSI_img, uint=False):
         HSI_img_np = np.array(HSI_img)
-        RGB_img = HSI_img_np.dot(self.filter)
+        RGB_img = normalize(HSI_img_np.dot(self.filter))
         if uint is True:
-            RGB_img = np.array(normalize(RGB_img) * 255., dtype=np.uint8)
+            RGB_img = np.array(RGB_img * 255., dtype=np.uint8)
         return RGB_img

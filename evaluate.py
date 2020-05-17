@@ -67,11 +67,14 @@ class Evaluater(object):
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
         self.ch = None
+        self.hsi2rgb = None
         self.diff_ch = 10
         if 'ch' in kwargs:
             self.ch = kwargs['ch']
         if 'diff_ch' in kwargs:
             self.diff_ch = kwargs['diff_ch']
+        if 'HSI2RGB' in kwargs:
+            self.hsi2rgb = HSI2RGB(filter_name)
         if os.path.exists(save_img_path) is True:
             shutil.rmtree(save_img_path)
         os.mkdir(save_img_path)
@@ -108,10 +111,13 @@ class Evaluater(object):
             cax = divider.append_axes('right', '5%', pad='3%')
             im = ax.imshow(img, cmap='jet')
             plt.colorbar(im, cax=cax)
-        elif self.ch is None:
+        elif self.hsi2rgb is not None:
+            img = self.hsi2rgb.callback(img)
             im = ax.imshow(img)
-        else:
+        elif self.ch is not None:
             im = ax.imshow(img[:, :, self.ch])
+        else:
+            im = ax.imshow(img)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title(title)
