@@ -56,6 +56,8 @@ class Trainer(object):
             mode = 'Train'
             train_loss = []
             val_loss = []
+            show_train_eval = []
+            show_val_eval = []
             desc_str = f'{mode:>5} Epoch: {epoch + 1:05d} / {epochs:05d}'
             with tqdm(train_dataloader, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
                 for i, (inputs, labels) in enumerate(pbar):
