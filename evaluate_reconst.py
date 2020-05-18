@@ -3,7 +3,7 @@
 
 import os
 import torch
-from data_loader import PatchMaskDataset
+from data_loader import PatcEvalDataset
 from model.HSCNN import HSCNN
 from evaluate import RMSEMetrics, PSNRMetrics, SAMMetrics
 from evaluate import ReconstEvaluater
@@ -11,7 +11,8 @@ from pytorch_ssim import SSIM
 
 
 device = 'cpu'
-img_path = 'dataset/'
+img_path = '../SCI_dataset/My_Harvard'
+data_path = 'Harvard_date'
 test_path = os.path.join(img_path, 'test_patch_data')
 mask_path = os.path.join(img_path, 'mask_data')
 model_name = 'model'
@@ -20,6 +21,7 @@ output_path = 'result'
 output_img_path = os.path.join(output_path, 'output_img')
 output_mat_path = os.path.join(output_path, 'output_mat')
 output_csv_path = os.path.join(output_path, 'output.csv')
+os.makedirs(output_img_path, exist_ok=True)
 
 
 if __name__ == '__main__':
