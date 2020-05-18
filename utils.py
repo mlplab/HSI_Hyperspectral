@@ -31,6 +31,7 @@ def make_patch(data_path, save_path, size=256, step=256, ch=24, data_key='data')
     os.mkdir(save_path)
 
     data_list = os.listdir(data_path)
+    # data_list.sort()
     for i, name in enumerate(tqdm(data_list)):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
@@ -265,3 +266,11 @@ class HSI2RGB(object):
         if uint is True:
             RGB_img = np.array(RGB_img * 255., dtype=np.uint8)
         return RGB_img
+
+
+def plot_img(img, title='Title'):
+    plt.imshow(show_data)
+    plt.xtricks([])
+    plt.ytricks([])
+    plt.title('Output')
+    return None
