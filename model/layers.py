@@ -207,40 +207,10 @@ class RAM(torch.nn.Module):
         spectral_linear = torch.relu(self.spectral_Linear(spectral_pooling))
         spectral_attn = self.spectral_attn(spectral_linear).unsqueeze(-1).unsqueeze(-1)
 
-        # attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
-        attn_output = torch.sigmoid(spatial_attn + spectral_attn)
+        attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
+        # attn_output = torch.sigmoid(spatial_attn + spectral_attn)
         output = attn_output * x
         return output
-
-
-class Attention_HSI_prior_block(torch.nn.Module):
-
-    def __init__(self, input_ch, output_ch, feature=64, **kwargs):
-        super(Attention_HSI_prior_block, self).__init__()
-        self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
-        self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
-        self.attention = RAM(output_ch, output_ch, ratio=kwargs.get('ratio'))
-        self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
-        self.activation = kwargs.get('activation')
-
-    def _activation_fn(self, x):
-        if self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return leaky_relu(x)
-        else:
-            return torch.relu(x)
-
-    def forward(self, x):
-        x_in = x
-        h = self._activation_fn(self.spatial_1(x))
-        h = self.spatial_2(h)
-        h = self.attention(h)
-        x = h + x_in
-        x = self.spectral(x)
-        return x
 
 
 class Global_Average_Pooling2d(torch.nn.Module):
@@ -252,7 +222,7 @@ class Global_Average_Pooling2d(torch.nn.Module):
 
 class SE_block(torch.nn.Module):
 
-    def __init__(self, input_ch, outupt_ch, **kwargs):
+    def __init__(self, input_ch, output_ch, **kwargs):
         super(SE_block, self).__init__()
         if 'ratio' is kwargs:
             ratio = kwargs['ratio']
@@ -273,25 +243,22 @@ class SE_block(torch.nn.Module):
         return x * attn.unsqueeze(-1).unsqueeze(-1)
 
 
-class Attention_SE_HSI_prior_block(torch.nn.Module):
+class Attention_HSI_prior_block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, feature=64, **kwargs):
-        super(Attention_GVP_HSI_prior_block, self).__init__()
+        super(Attention_HSI_prior_block, self).__init__()
+        mode = kwargs.get('mode')
         ratio = kwargs.get('ratio')
         if ratio is None:
             ratio = 2
-        mode = kwargs.get('mode')
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
-        self.spatial_attention = RAM(output_ch, output_ch, ratio=ratio)
-        # self.spectral_gvp = GVP()
-        # self.spectral_linear1 = torch.nn.Linear(output_ch, int(output_ch // ratio))
-        # self.spectral_linear2 = torch.nn.Linear(int(output_ch // ratio), output_ch)
+        self.attention = RAM(output_ch, output_ch, ratio=ratio)
+        self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         if mode is not None:
             self.spectral_attention = SE_block(output_ch, output_ch, mode=mode, ratio=ratio)
         else:
             self.spatial_attention = torch.nn.Identity()
-        self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.activation = kwargs.get('activation')
 
     def _activation_fn(self, x):
@@ -305,17 +272,11 @@ class Attention_SE_HSI_prior_block(torch.nn.Module):
             return torch.relu(x)
 
     def forward(self, x):
-        bs, ch, h, w = x.size()
         x_in = x
-        h_spatial = self._activation_fn(self.spatial_1(x))
-        h_spatial = self.spatial_2(h_spatial)
-        h_spatial = self.spatial_attention(h_spatial)
+        h = self._activation_fn(self.spatial_1(x))
+        h = self.spatial_2(h)
+        h = self.attention(h)
         x = h + x_in
-        # x_spectral = self.spectral(x)
-        # h_spectral = self.spectral_gvp(x)
-        # h_spectral = self.spectral_linear1(h_spectral)
-        # h_spectral = self.spectral_linear2(h_spectral)
-        # x = h_spectral.unsqueeze(-1).unsqueeze(-1) * x_spectral
         x = self.spectral(x)
         x = self.spectral_attention(x)
         return x
