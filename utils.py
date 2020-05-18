@@ -266,6 +266,7 @@ class HSI2RGB(object):
         if uint is True:
             RGB_img = np.array(RGB_img * 255., dtype=np.uint8)
         return RGB_img
+<<<<<<< HEAD
 
 
 def plot_img(img, title='Title'):
@@ -274,3 +275,5 @@ def plot_img(img, title='Title'):
     plt.ytricks([])
     plt.title('Output')
     return None
+=======
+>>>>>>> 503e64245e0ec251b80767722de9b59f7d7b08d9

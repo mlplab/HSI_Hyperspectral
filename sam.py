@@ -18,8 +18,8 @@ img2 = Image.open(img_name2).convert('RGB')
 # plt.imshow(img2)
 # plt.show()
 
-x = np.asarray(img1, dtype=np.float32).transpose(2, 0, 1)
-y = np.asarray(img2, dtype=np.float32).transpose(2, 0, 1)
+x = np.asarray(img1, dtype=np.float32).transpose(2, 0, 1) / 255.
+y = np.asarray(img2, dtype=np.float32).transpose(2, 0, 1) / 255.
 tensor_x = torch.as_tensor(x)
 tensor_y = torch.as_tensor(y)
 
