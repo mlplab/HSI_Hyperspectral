@@ -217,7 +217,7 @@ class Global_Average_Pooling2d(torch.nn.Module):
 
     def forward(self, x):
         bs, ch, h, w = x.size()
-        return torch.nn.functional.avg_pool2d(x, kernel_size=(h, w))
+        return torch.nn.functional.avg_pool2d(x, kernel_size=(h, w)).view(-1, ch)
 
 
 class SE_block(torch.nn.Module):
