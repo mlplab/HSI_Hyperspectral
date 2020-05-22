@@ -21,6 +21,7 @@ from utils import normalize
 
 warnings.simplefilter('ignore')
 device = 'cpu'
+plt.rcParams['image.cmap'] = 'gray'
 
 
 class RMSEMetrics(torch.nn.Module):
@@ -156,7 +157,6 @@ class Evaluater(object):
 
     def _save_csv(self, output_evaluate, header):
         header.insert(0, 'ID')
-        header.append('Time')
         output_evaluate_np = np.array(output_evaluate, dtype=np.float32)
         means = list(np.mean(output_evaluate_np, axis=0))
         output_evaluate.append(means)
@@ -186,16 +186,14 @@ class ReconstEvaluater(Evaluater):
                     evaluate_list = [f'{i:05d}']
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
-                    step_time = time()
                     if hcr is True:
                         _, _, output = model(inputs)
                     else:
                         output = model(inputs)
-                    output_time = time() - step_time
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(output, labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
-                    evaluate_list.append(f'{output_time:.5f}')
+                    # evaluate_list.append(f'{output_time:.5f}')
                     self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
                     self._save_all(i, inputs, output, labels)
