@@ -258,7 +258,7 @@ class Attention_HSI_prior_block(torch.nn.Module):
         if mode is not None:
             self.spectral_attention = SE_block(output_ch, output_ch, mode=mode, ratio=ratio)
         else:
-            self.spatial_attention = torch.nn.Identity()
+            self.spectral_attention = torch.nn.Identity()
         self.activation = kwargs.get('activation')
 
     def _activation_fn(self, x):
