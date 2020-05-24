@@ -40,6 +40,8 @@ class HSCNN(torch.nn.Module):
             return swish(x)
         elif self.activation == 'mish':
             return mish(x)
+        if self.activation == 'leaky':
+            return torch.nn.functinal.leaky_relu(x)
         else:
             return x
 
