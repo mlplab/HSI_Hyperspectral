@@ -224,7 +224,7 @@ class SE_block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, **kwargs):
         super(SE_block, self).__init__()
-        if 'ratio' is kwargs:
+        if 'ratio' in kwargs:
             ratio = kwargs['ratio']
         else:
             ratio = 2
