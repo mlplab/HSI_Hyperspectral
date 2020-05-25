@@ -280,3 +280,31 @@ class Attention_HSI_prior_block(torch.nn.Module):
         x = self.spectral(x)
         x = self.spectral_attention(x)
         return x
+
+
+class BasicBlock(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, feature=64, **kwargs):
+        super(BasicBlock, self).__init__()
+        self.activation = kwargs.get('activation')
+        self.lambda_step = torch.nn.Parameter(torch.Tensor([.5]))
+        self.soft_thr = torch.nn.Parameter(torch.Tensor([.01]))
+        self.conv_forward1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
+        self.conv_forward2 = torch.nn.Conv2d(feature, feature, 3, 1, 1)
+        self.conv_backward1 = torch.nn.Conv2d(feature, feature, 3, 1, 1)
+        self.conv_backward2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
+
+    def _activation_fn(self, x):
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return leaky_relu(x)
+        else:
+            return torch.relu(x)
+
+    def forward(self, x):
+
+        x = self._activation_fn(self.conv_forward1(x))
+        x = self.conv_forward2(x)
