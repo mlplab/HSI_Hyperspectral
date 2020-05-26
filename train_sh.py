@@ -30,7 +30,7 @@ if device == 'cuda':
     torch.backends.cudnn.benchmark = True
 
 
-data_name = parser.dataset
+data_name = args.dataset
 img_path = f'../SCI_dataset/My_{data_name}'
 train_path = os.path.join(img_path, 'train_patch_data')
 test_path = os.path.join(img_path, 'test_patch_data')
@@ -44,7 +44,7 @@ test_dataset = PatchMaskDataset(test_path, mask_path, tanh=False, transform=test
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
 
-model_list = parser.model_name
+model_list = args.model_name
 for model_name in model_list:
     # model_name = 'Attention_HSI_Model'
     if model_name == 'HSCNN':

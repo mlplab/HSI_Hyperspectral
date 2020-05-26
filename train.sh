@@ -25,8 +25,8 @@ done
 
 
 model_name=( `echo $model_name | tr ' ' ' '` )
-for name in $model_name[@]; do 
-    echo $name 
+for name in $model_name[@]; do
+    echo $name
 done
 
 
