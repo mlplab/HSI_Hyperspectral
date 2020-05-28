@@ -7,7 +7,7 @@ CMDNAME=`basename $0`
 batch_size=64
 epoch=150
 dataset="Harvard"
-model_name=("HSCNN HSI_Network Attention_HSI_None Attentio_HSI_GAP Attention_HSI_GVP")
+model_name=("HSCNN HSI_Network Attention_HSI_None Attention_HSI_GAP Attention_HSI_GVP")
 
 
 while getopts m: OPT
