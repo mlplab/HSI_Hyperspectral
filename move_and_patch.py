@@ -4,7 +4,8 @@
 import os
 import shutil
 import numpy as np
-from utils import make_patch
+from tqdm import tqdm
+from utils import make_patch, patch_mask
 
 
 data_name = 'CAVE'
