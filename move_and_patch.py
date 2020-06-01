@@ -3,14 +3,21 @@
 
 import os
 import shutil
+import numpy as np
 from utils import make_patch
 
 
-cave_path = '../CAVE/'
-train_data_path = '../train_data'
-test_data_path = '../test_data'
-train_patch_path = '../train_patch_data'
-test_patch_path = '../test_patch_data'
+data_name = 'CAVE'
+data_path = f'../SCI_dataset/{data_name}'
+save_path = f'../SCI_dataset/My_{data_name}'
+train_data_path = os.path.join(save_path, 'train_data')
+test_data_path = os.path.join(save_path, 'test_data')
+train_patch_path = os.path.join(save_path, 'train_patch_data')
+test_patch_path = os.path.join(save_path, 'test_patch_data')
+eval_path = os.path.join(save_path, 'eval_data')
+mask_path = os.path.join(save_path, 'mask_data')
+eval_mask_path = os.path.join(save_path, 'eval_mask_data')
+np.random.seed(1)
 
 
 def move_data(data_path, data_list, move_path):
@@ -20,11 +27,18 @@ def move_data(data_path, data_list, move_path):
     return None
 
 
-cave_list = os.listdir(cave_path)
-train_list = cave_list[:20]
-test_list = cave_list[20:]
+os.makedirs(save_path, exist_ok=True)
+data_list = os.listdir(data_path)
+data_list.sort()
+data_list = np.array(data_list)
+train_test_idx = np.random.choice((1, 2), data_list.shape[0], p=(.8, .2))
+train_list = list(data_list[train_test_idx == 1])
+test_list = list(data_list[train_test_idx == 2])
 print(len(train_list), len(test_list))
-move_data(cave_path, train_list, train_data_path)
-move_data(cave_path, test_list, test_data_path)
-make_patch(train_data_path, train_patch_path, size=64, ch=31)
-make_patch(test_data_path, test_patch_path, size=64, ch=31)
+move_data(data_path, train_list, train_data_path)
+move_data(data_path, test_list, test_data_path)
+make_patch(train_data_path, train_patch_path, size=64, step=64, ch=31)
+make_patch(test_data_path, test_patch_path, size=64, step=64, ch=31)
+make_patch(test_data_path, eval_path, size=512, step=512, ch=31)
+patch_mask(os.path.join(data_path, 'test_mask.mat'), mask_path, size=64, step=64, ch=31)
+patch_mask(os.path.join(data_path, 'test_mask.mat'), eval_mask_path, size=512, step=512, ch=31)
