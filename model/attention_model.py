@@ -17,29 +17,23 @@ class Attention_HSI_Model(torch.nn.Module):
             ratio = 2
         self.activation = kwargs.get('activation')
         self.output_norm = kwargs.get('output_norm')
-        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
+        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
         self.start_shortcut = torch.nn.Identity()
-        hsi_block = []
-        residual_block = []
-        shortcut_block = []
-        for _ in range(block_num):
-            hsi_block.append(Attention_HSI_prior_block(output_ch, output_ch, activation='relu', ratio=ratio, mode=mode))
-            residual_block.append(torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1))
-            shortcut_block.append(torch.nn.Identity())
+        hsi_block = [Attention_HSI_prior_block(output_ch, output_ch,
+                                               activation=self.activation,
+                                               ratio=ratio, mode=mode) for _ in range(block_num)]
+        residual_block = [torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1) for _ in range(block_num)]
         self.hsi_block = torch.nn.Sequential(*hsi_block)
         self.residual_block = torch.nn.Sequential(*residual_block)
-        self.shortcut_block = torch.nn.Sequential(*shortcut_block)
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):
         x = self.start_conv(x)
-        x_in = self.start_shortcut(x)
+        x_in = x
         for hsi, residual, shortcut in zip(self.hsi_block, self.residual_block, self.shortcut_block):
             x_hsi = hsi(x)
             x_residual = residual(x)
-            x_shortcut = shortcut(x_in)
-            # x = x_in + self.ita * x_hsi + x_residual
-            x = x_shortcut + x_hsi + x_residual
+            x = x_in + x_hsi + x_residual
         return self._output_norm_fn(self.output_conv(x))
 
     def _output_norm_fn(self, x):

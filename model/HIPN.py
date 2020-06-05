@@ -17,7 +17,7 @@ class HIPN(torch.nn.Module):
         self.output_norm = output_norm
         # k = 64
         k = feature
-        self.start_conv = torch.nn.Conv2d(input_ch, k, 3, 1, 1)
+        self.start_conv = torch.nn.Conv2d(input_ch, k, 1, 1, 0)
         hsi_prior_block = []
         residual_block = []
         for block in range(block_num):
@@ -60,7 +60,7 @@ class HSI_Network(torch.nn.Module):
         super(HSI_Network, self).__init__()
         self.activation = activation
         self.output_norm = output_norm
-        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
+        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
         self.start_shortcut = torch.nn.Identity()
         hsi_block = []
         residual_block = []

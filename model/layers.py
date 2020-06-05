@@ -207,8 +207,8 @@ class RAM(torch.nn.Module):
         spectral_linear = torch.relu(self.spectral_Linear(spectral_pooling))
         spectral_attn = self.spectral_attn(spectral_linear).unsqueeze(-1).unsqueeze(-1)
 
-        attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
-        # attn_output = torch.sigmoid(spatial_attn + spectral_attn)
+        # attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
+        attn_output = torch.sigmoid(spatial_attn + spectral_attn)
         output = attn_output * x
         return output
 
