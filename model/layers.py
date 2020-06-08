@@ -177,15 +177,6 @@ class My_HSI_network(torch.nn.Module):
         return x
 
 
-class GVP(torch.nn.Module):
-
-    def forward(self, x):
-        batch_size, ch, h, w = x.size()
-        avg_x = torch.nn.functional.avg_pool2d(x, kernel_size=(h, w))
-        var_x = torch.nn.functional.avg_pool2d((x - avg_x) ** 2, kernel_size=(h, w))
-        return var_x.view(-1, ch)
-
-
 class RAM(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, ratio=None):
@@ -220,6 +211,15 @@ class Global_Average_Pooling2d(torch.nn.Module):
         return torch.nn.functional.avg_pool2d(x, kernel_size=(h, w)).view(-1, ch)
 
 
+class GVP(torch.nn.Module):
+
+    def forward(self, x):
+        batch_size, ch, h, w = x.size()
+        avg_x = torch.nn.functional.avg_pool2d(x, kernel_size=(h, w))
+        var_x = torch.nn.functional.avg_pool2d((x - avg_x) ** 2, kernel_size=(h, w))
+        return var_x.view(-1, ch)
+
+
 class SE_block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, **kwargs):
@@ -247,7 +247,7 @@ class Attention_HSI_prior_block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, feature=64, **kwargs):
         super(Attention_HSI_prior_block, self).__init__()
-        mode = kwargs.get('mode')
+        self.mode = kwargs.get('mode')
         ratio = kwargs.get('ratio')
         if ratio is None:
             ratio = 2
@@ -255,10 +255,8 @@ class Attention_HSI_prior_block(torch.nn.Module):
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
         self.attention = RAM(output_ch, output_ch, ratio=ratio)
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
-        if mode is not None:
-            self.spectral_attention = SE_block(output_ch, output_ch, mode=mode, ratio=ratio)
-        else:
-            self.spectral_attention = torch.nn.Identity()
+        if self.mode is not None:
+            self.spectral_attention = SE_block(output_ch, output_ch, mode=self.mode, ratio=ratio)
         self.activation = kwargs.get('activation')
 
     def _activation_fn(self, x):
@@ -278,7 +276,8 @@ class Attention_HSI_prior_block(torch.nn.Module):
         h = self.attention(h)
         x = h + x_in
         x = self.spectral(x)
-        x = self.spectral_attention(x)
+        if self.mode is not None:
+            x = self.spectral_attention(x)
         return x
 
 

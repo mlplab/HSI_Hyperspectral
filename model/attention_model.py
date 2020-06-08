@@ -17,8 +17,7 @@ class Attention_HSI_Model(torch.nn.Module):
             ratio = 2
         self.activation = kwargs.get('activation')
         self.output_norm = kwargs.get('output_norm')
-        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
-        self.start_shortcut = torch.nn.Identity()
+        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         hsi_block = [Attention_HSI_prior_block(output_ch, output_ch,
                                                activation=self.activation,
                                                ratio=ratio, mode=mode) for _ in range(block_num)]
@@ -30,7 +29,7 @@ class Attention_HSI_Model(torch.nn.Module):
     def forward(self, x):
         x = self.start_conv(x)
         x_in = x
-        for hsi, residual, shortcut in zip(self.hsi_block, self.residual_block, self.shortcut_block):
+        for hsi, residual in zip(self.hsi_block, self.residual_block):
             x_hsi = hsi(x)
             x_residual = residual(x)
             x = x_in + x_hsi + x_residual

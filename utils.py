@@ -60,7 +60,7 @@ def patch_mask(mask_path, save_path, size=256, step=256, ch=24, data_key='data')
     tensor_data = torch.as_tensor(data)
     patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
     patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
-    for i in range(patch_data.size()[0]):
+    for i in tqdm(range(patch_data.size()[0]), ascii=True):
         save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
         save_name = os.path.join(save_path, f'mask_{i:05d}.mat')
         scipy.io.savemat(save_name, {'data': save_data})
