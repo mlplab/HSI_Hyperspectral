@@ -2,6 +2,7 @@
 
 
 import os
+import random
 import shutil
 import numpy as np
 from tqdm import tqdm
@@ -20,7 +21,10 @@ test_data_path = os.path.join(save_path, 'test_data')
 train_patch_path = os.path.join(save_path, 'train_patch_data')
 test_patch_path = os.path.join(save_path, 'test_patch_data')
 eval_path = os.path.join(save_path, 'eval_data')
-eval_show_path = os.path.join(save_show_path, 'eval_show_data')
+eval_show_path = os.path.join(save_path, 'eval_show_data')
+
+
+callback_path = os.path.join(save_path, 'callback_path')
 
 
 mask_path = os.path.join(save_path, 'mask_data')
@@ -29,6 +33,7 @@ mask_show_path = os.path.join(save_show_path, 'mask_show_data')
 
 
 data_key = {'CAVE': 'im', 'Harvard': 'ref', 'ICVL': 'data'}
+random.seed(1)
 np.random.seed(1)
 
 
@@ -60,3 +65,10 @@ make_patch(test_data_path, eval_show_path, size=512, step=512, ch=31, data_key=d
 patch_mask(os.path.join(data_path, 'test_mask.mat'), mask_path, size=64, step=64, ch=31)
 patch_mask(os.path.join(data_path, 'test_mask.mat'), eval_mask_path, size=256, step=256, ch=31)
 patch_mask(os.path.join(data_path, 'test_mask.mat'), mask_show_path, size=512, step=512, ch=31)
+
+
+callback_list = os.listdir(eval_show_path)
+callback_list = random.sample(callback_list, int(len(callback_list) * .3))
+os.makedirs(callback_path, exist_ok=True)
+move_data(eval_show_path, callback_list, callback_path)
+# make_patch(test_data_path, eval_show_path, size=512, step=512, ch=31, data_key=data_key[data_name])

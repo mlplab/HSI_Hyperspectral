@@ -24,6 +24,10 @@ def psnr(loss):
     return 20 * torch.log10(1 / torch.sqrt(loss))
 
 
+def calc_filter(img, filter):
+    return normalize(img.dot(filter)[:, :, ::-1])
+
+
 def make_patch(data_path, save_path, size=256, step=256, ch=24, data_key='data'):
 
     if os.path.exists(save_path):
@@ -226,10 +230,8 @@ class Draw_Output(object):
         self.save_path = save_path
         self.partience = partience
         self.verbose = verbose
-        self.ch = ch
-        self.diff = False
-        if 'diff' in kwargs:
-            self.diff = True
+        # self.ch = ch
+        self.filter = np.array(scipy.io.loadmat(filter_path)['T'], dtype=np.float32)
 
         ###########################################################
         # Make output directory
@@ -241,39 +243,49 @@ class Draw_Output(object):
     def callback(self, model, epoch, *args, **kwargs):
         keys = kwargs.keys()
         if epoch % self.partience == 0:
-            epoch_save_path = os.path.join(self.save_path, f'epoch{epoch}')
-            os.makedirs(epoch_save_path, exist_ok=True)
-            output_save_path = os.path.join(epoch_save_path, 'output')
-            os.makedirs(output_save_path, exist_ok=True)
-            if self.diff is True:
-                diff_save_path = os.path.join(self.epoch_save_path, 'diff')
-                os.makedirs(diff_save_path, exist_ok=True)
+            epoch_save_path = os.path.join(self.save_path, f'epoch_{epoch:05d}')
+            # os.makedirs(epoch_save_path, exist_ok=True)
+            # output_save_path = os.path.join(epoch_save_path, 'output')
+            # os.makedirs(output_save_path, exist_ok=True)
+            # diff_save_path = os.path.join(self.epoch_save_path, 'diff')
+            # os.makedirs(diff_save_path, exist_ok=True)
             model.eval()
             with torch.no_grad():
                 for i, (data, label) in enumerate(self.dataset):
                     data, label = self._trans_data(data, label)
+
                     output = model(data)
-                    data_plot = normalize(data).unsqueeze(0)
-                    output_plot = normalize(output[self.ch, :, :]).unsqueeze(0)
-                    label_plot = normalize(label[self.ch, :, :]).unsqueeze(0)
-                    output_imgs = torch.cat([data_plot, output_plot, label_plot], dim=0)
-                    torchvision.utils.save_image(output_imgs, os.path.join(epoch_save_path, f'all_imgs_{i}.png'), padding=10)
-                    if self.diff is True:
-                        error = torch.abs(output_plot - label_plot).squeeze().numpy()
-                        plt.imshow(error, cmap='jet')
-                        plt.title('diff')
-                        plt.xticks(color='None')
-                        plt.yticks(color='None')
-                        plt.colorbar()
-                        plt.savefig(os.path.join(diff_save_path, 'diff_{i}.png'))
-                        plt.close()
-                    del output_imgs
+
+                    diff = torch.abs(output[:, -1].squeeze() - label[:, -1].squeeze())
+                    diff = normalize(diff.to('cpu').detech().numpy().copy())
+
+                    inputs = normalize(data.squeeze().to('cpu').detech().numpy().copy())
+                    outputs = output.squeeze().to('cpu').detech().numpy().copy()
+                    outputs = outputs.transpose(1, 2, 0)
+                    outputs = normalize(outputs.dot(self.filter)[:, :, ::-1])
+                    labels = label.squeeze().to('cpu').detech().numpy().copy()
+                    labels = labelstranspose(1, 2, 0)
+                    labels = normalize(labels.dot(self.filter)[:,:,::-1])
+                    self.plot_sub(inputs, 1, title='inputs')
+                    self.plot_sub(outputs, 2, title='outputs')
+                    self.plot_sub(labels, 3, title='labels')
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(epoch_save_path, f'output_{i:05d}.png'))
+                    plt.close()
         return self
 
     def _trans_data(self, data, label):
         data = data.unsqueeze(0).to(device)
         label = label.unsqueeze(0).to(device)
         return data, label
+
+    def _plot_sub(img, idx, title='title'):
+        plt.subplot(1, 3, idx)
+        plt.imshow(img)
+        plt.xticks([])
+        plt.yticks([])
+        plt.title(title)
+        return self
 
 
 class HSI2RGB(object):
