@@ -257,18 +257,18 @@ class Draw_Output(object):
                     output = model(data)
 
                     diff = torch.abs(output[:, -1].squeeze() - label[:, -1].squeeze())
-                    diff = normalize(diff.to('cpu').detech().numpy().copy())
+                    diff = normalize(diff.to('cpu').detach().numpy().copy())
 
-                    inputs = normalize(data.squeeze().to('cpu').detech().numpy().copy())
-                    outputs = output.squeeze().to('cpu').detech().numpy().copy()
+                    inputs = normalize(data.squeeze().to('cpu').detach().numpy().copy())
+                    outputs = output.squeeze().to('cpu').detach().numpy().copy()
                     outputs = outputs.transpose(1, 2, 0)
                     outputs = normalize(outputs.dot(self.filter)[:, :, ::-1])
-                    labels = label.squeeze().to('cpu').detech().numpy().copy()
-                    labels = labelstranspose(1, 2, 0)
+                    labels = label.squeeze().to('cpu').detach().numpy().copy()
+                    labels = labels.transpose(1, 2, 0)
                     labels = normalize(labels.dot(self.filter)[:,:,::-1])
-                    self.plot_sub(inputs, 1, title='inputs')
-                    self.plot_sub(outputs, 2, title='outputs')
-                    self.plot_sub(labels, 3, title='labels')
+                    self._plot_sub(inputs, 1, title='inputs')
+                    self._plot_sub(outputs, 2, title='outputs')
+                    self._plot_sub(labels, 3, title='labels')
                     plt.tight_layout()
                     plt.savefig(os.path.join(epoch_save_path, f'output_{i:05d}.png'))
                     plt.close()
@@ -279,7 +279,7 @@ class Draw_Output(object):
         label = label.unsqueeze(0).to(device)
         return data, label
 
-    def _plot_sub(img, idx, title='title'):
+    def _plot_sub(self, img, idx, title='title'):
         plt.subplot(1, 3, idx)
         plt.imshow(img)
         plt.xticks([])

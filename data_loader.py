@@ -141,4 +141,4 @@ class CallbackDataset(PatchMaskDataset):
             input_data = torch.cat([measurement_data, self.mask], dim=0)
         else:
             input_data = measurement_data
-        return self.data[idx], input_data, label_data
+        return input_data, label_data
