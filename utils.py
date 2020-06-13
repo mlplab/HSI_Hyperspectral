@@ -259,7 +259,11 @@ class Draw_Output(object):
                     diff = torch.abs(output[:, -1].squeeze() - label[:, -1].squeeze())
                     diff = normalize(diff.to('cpu').detach().numpy().copy())
 
-                    inputs = normalize(data.squeeze().to('cpu').detach().numpy().copy())
+                    data = data.squeeze()
+                    inputs = normalize(data.to('cpu').detach().numpy().copy())
+                    if data.dim() == 3:
+                        inputs = inputs[0]
+                    inputs = normalize(inputs)
                     outputs = output.squeeze().to('cpu').detach().numpy().copy()
                     outputs = outputs.transpose(1, 2, 0)
                     outputs = normalize(outputs.dot(self.filter)[:, :, ::-1])
@@ -269,6 +273,7 @@ class Draw_Output(object):
                     self._plot_sub(inputs, 1, title='inputs')
                     self._plot_sub(outputs, 2, title='outputs')
                     self._plot_sub(labels, 3, title='labels')
+                    self._plot_sub(diff, 3, title='diff')
                     plt.tight_layout()
                     plt.savefig(os.path.join(epoch_save_path, f'output_{i:05d}.png'))
                     plt.close()
@@ -280,7 +285,7 @@ class Draw_Output(object):
         return data, label
 
     def _plot_sub(self, img, idx, title='title'):
-        plt.subplot(1, 3, idx)
+        plt.subplot(1, 4, idx)
         plt.imshow(img)
         plt.xticks([])
         plt.yticks([])
