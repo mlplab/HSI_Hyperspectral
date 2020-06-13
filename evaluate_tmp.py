@@ -63,8 +63,7 @@ class SAMMetrics(torch.nn.Module):
 class Evaluater(object):
 
     def __init__(self, save_img_path='output_img', save_mat_path='output_mat', save_csv_path='output_csv', filter_path=None, **kwargs):
-        self.save_img_path = save_img_path
-        self.save_alls_path = os.path.join(save_img_path, 'alls')
+        self.save_alls_path = save_img_path
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
         self.ch = None
@@ -75,11 +74,10 @@ class Evaluater(object):
             self.diff_ch = kwargs['diff_ch']
         if os.path.exists(save_img_path) is True:
             shutil.rmtree(save_img_path)
-        os.mkdir(save_img_path)
-        os.mkdir(self.save_alls_path)
+        os.makedirs(self.save_alls_path, exist_ok=True)
         if os.path.exists(save_mat_path) is True:
             shutil.rmtree(save_mat_path)
-        os.mkdir(save_mat_path)
+        os.makedirs(save_mat_path, exist_ok=True)
 
     def _save_img(self, i, inputs, output, labels):
         inputs_plot = normalize(inputs[:, 0].unsqueeze(0))
