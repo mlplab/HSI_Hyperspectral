@@ -11,14 +11,15 @@ class Dense_HSI_prior_Network(torch.nn.Module):
     def __init__(self, input_ch, output_ch, *args, block_num=9, **kwargs):
         super(Dense_HSI_prior_Network, self).__init__()
         self.output_norm = kwargs.get('output_norm')
+        activation = kwargs.get('activation')
         feature = kwargs.get('feature')
         if feature is None:
             feature = 64
         stack_num = output_ch * block_num
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         self.start_shortcut = torch.nn.Identity()
-        self.residual_block = torch.nn.ModuleList([torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0) for _ in range(block_num)])
-        self.hsi_block = torch.nn.ModuleList([HSI_prior_block(output_ch, output_ch, feature=feature) for _ in range(block_num)])
+        self.residual_block = torch.nn.ModuleList([torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1) for _ in range(block_num)])
+        self.hsi_block = torch.nn.ModuleList([HSI_prior_block(output_ch, output_ch, feature=feature, activation=activation) for _ in range(block_num)])
         self.dense_conv = torch.nn.ModuleList([torch.nn.Conv2d(output_ch + output_ch, output_ch, 3, 1, 1) for _ in range(block_num)])
         # self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.output_conv = torch.nn.Conv2d(stack_num, output_ch, 1, 1, 0)
