@@ -275,7 +275,7 @@ class Draw_Output(object):
                     self._plot_sub(labels, 3, title='labels')
                     self._plot_sub(diff, 3, title='diff')
                     plt.tight_layout()
-                    plt.savefig(os.path.join(epoch_save_path, f'output_{i:05d}.png'))
+                    plt.savefig(os.path.join(epoch_save_path, f'output_{i:05d}.png'), bbox_inches='tight')
                     plt.close()
         return self
 
