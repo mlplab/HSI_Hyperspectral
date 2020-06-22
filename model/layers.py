@@ -137,6 +137,8 @@ class HSI_prior_block(torch.nn.Module):
             return swish(x)
         elif self.activation == 'mish':
             return mish(x)
+        else:
+            return x
 
     def forward(self, x):
         x_in = x

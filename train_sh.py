@@ -34,6 +34,7 @@ if args.concat is 'False':
 else:
     concat_flag = True
 data_name = args.dataset
+model_name = args.model_name
 block_num = 9
 
 
@@ -68,7 +69,6 @@ else:
     input_ch = 1
 
 
-model_name = args.model_name
 # model_name = 'Attention_HSI_Model'
 if model_name == 'HSCNN':
     model = HSCNN(input_ch, 31, activation='leaky')
@@ -81,7 +81,7 @@ elif model_name == 'Attention_HSI_GAP':
 elif model_name == 'Attention_HSI_GVP':
     model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
 elif model_name == 'Dense_HSI':
-    model = Dense_HSI_prior_Network(input_ch, 31, block_num=bock_num)
+    model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
 else:
     print 'Enter Model Name'
     sys.exit(0)
@@ -99,7 +99,7 @@ print(model_name)
 
 
 callback_dataset = CallbackDataset(callback_path, callback_mask_path, concat=concat_flag)
-draw_ckpt = Draw_Output(callback_dataset, save_path=callback_result_path, filter_path=filter_path)
+draw_ckpt = Draw_Output(callback_dataset, data_name, save_path=callback_result_path, filter_path=filter_path)
 ckpt_cb = ModelCheckPoint(os.path.join(ckpt_path, data_name), model_name + f'_{block_num}',
                           mkdir=True, partience=1, varbose=True)
 trainer = Trainer(model, criterion, optim, scheduler=scheduler, callbacks=[ckpt_cb, draw_ckpt])

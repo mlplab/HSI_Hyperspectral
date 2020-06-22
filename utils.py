@@ -246,11 +246,7 @@ class Draw_Output(object):
         keys = kwargs.keys()
         if epoch % self.partience == 0:
             epoch_save_path = os.path.join(self.save_path, f'epoch_{epoch:05d}')
-            # os.makedirs(epoch_save_path, exist_ok=True)
-            # output_save_path = os.path.join(epoch_save_path, 'output')
-            # os.makedirs(output_save_path, exist_ok=True)
-            # diff_save_path = os.path.join(self.epoch_save_path, 'diff')
-            # os.makedirs(diff_save_path, exist_ok=True)
+            os.makedirs(epoch_save_path, exist_ok=True)
             model.eval()
             with torch.no_grad():
                 for i, (data, label) in enumerate(self.dataset):
