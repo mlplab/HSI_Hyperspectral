@@ -211,7 +211,7 @@ class PlotStepLoss(object):
 
 class Draw_Output(object):
 
-    def __init__(self, dataset, *args, save_path='output', partience=5,
+    def __init__(self, dataset, data_name, *args, save_path='output', partience=5,
                  verbose=False, ch=10, **kwargs):
         '''
         Parameters
@@ -227,11 +227,13 @@ class Draw_Output(object):
         '''
         self.dataset = dataset
         self.data_num = len(self.dataset)
+        self.data_name = data_name
         self.save_path = save_path
         self.partience = partience
         self.verbose = verbose
         # self.ch = ch
-        self.filter = np.array(scipy.io.loadmat(filter_path)['T'], dtype=np.float32)
+        # self.filter = np.array(scipy.io.loadmat(filter_path)['T'], dtype=np.float32)
+        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (29, 8, 6), 'ICVL': (26, 16, 9)}
 
         ###########################################################
         # Make output directory
@@ -256,8 +258,9 @@ class Draw_Output(object):
 
                     output = model(data)
 
-                    diff = torch.abs(output[:, -1].squeeze() - label[:, -1].squeeze())
-                    diff = normalize(diff.to('cpu').detach().numpy().copy())
+                    diff = torch.abs(output.squeeze() - label.squeeze())
+                    diff = diff.to('cpu').detach().numpy().copy()
+                    diff = normalize(diff.transpose(1, 2, 0).mean(axis=-1))
 
                     data = data.squeeze()
                     inputs = normalize(data.to('cpu').detach().numpy().copy())
@@ -266,14 +269,15 @@ class Draw_Output(object):
                     inputs = normalize(inputs)
                     outputs = output.squeeze().to('cpu').detach().numpy().copy()
                     outputs = outputs.transpose(1, 2, 0)
-                    outputs = normalize(outputs.dot(self.filter)[:, :, ::-1])
+                    outputs = normalize(outputs[:, :, self.output_ch[self.data_name]])
                     labels = label.squeeze().to('cpu').detach().numpy().copy()
                     labels = labels.transpose(1, 2, 0)
-                    labels = normalize(labels.dot(self.filter)[:,:,::-1])
+                    labels = normalize(labels[:, :, self.output_ch[self.data_name]])
                     self._plot_sub(inputs, 1, title='inputs')
                     self._plot_sub(outputs, 2, title='outputs')
                     self._plot_sub(labels, 3, title='labels')
-                    self._plot_sub(diff, 3, title='diff')
+                    self._plot_sub(diff, 4, title='diff')
+                    plt.colorbar()
                     plt.tight_layout()
                     plt.savefig(os.path.join(epoch_save_path, f'output_{i:05d}.png'), bbox_inches='tight')
                     plt.close()
@@ -286,7 +290,13 @@ class Draw_Output(object):
 
     def _plot_sub(self, img, idx, title='title'):
         plt.subplot(1, 4, idx)
-        plt.imshow(img)
+        if title == 'diff':
+            cmap = 'jet'
+        elif title == 'inputs':
+            cmap = 'gray'
+        else:
+            cmap = None
+        plt.imshow(img, cmap=cmap)
         plt.xticks([])
         plt.yticks([])
         plt.title(title)
