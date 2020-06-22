@@ -62,46 +62,18 @@ class SAMMetrics(torch.nn.Module):
 
 class Evaluater(object):
 
-    def __init__(self, save_img_path='output_img', save_mat_path='output_mat', save_csv_path='output_csv', **kwargs):
-        self.save_img_path = save_img_path
-        self.save_alls_path = os.path.join(save_img_path, 'alls')
+    def __init__(self, data_name, save_img_path='output_img', save_mat_path='output_mat', save_csv_path='output_csv', filter_path=None, **kwargs):
+        self.data_name = data_name
+        self.save_alls_path = save_img_path
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
-        self.ch = None
-        self.diff_ch = 31 - 1
-        if 'ch' in kwargs:
-            self.ch = kwargs['ch']
-        if 'diff_ch' in kwargs:
-            self.diff_ch = kwargs['diff_ch']
-        if os.path.exists(save_img_path) is True:
-            shutil.rmtree(save_img_path)
-        os.mkdir(save_img_path)
-        os.mkdir(self.save_alls_path)
-        if os.path.exists(save_mat_path) is True:
-            shutil.rmtree(save_mat_path)
-        os.mkdir(save_mat_path)
-
-    def _save_img(self, i, inputs, output, labels):
-        inputs_plot = normalize(inputs[:, 0].unsqueeze(0))
-        output_plot = normalize(output[:, 10].unsqueeze(0))
-        # torchvision.utils.save_image(output_plot, os.path.join(self.save_output_path, f'output_{i}.png'))
-        label_plot = normalize(labels[:, 10].unsqueeze(0))
-        # torchvision.utils.save_image(label_plot, os.path.join(self.save_label_path, f'label_{i}.png'))
-        output_img = torch.cat([inputs_plot, output_plot, label_plot], dim=0)
-        torchvision.utils.save_image(output_img, os.path.join(self.save_alls_path, f'out_and_label_{i}.png'), nrow=3, padding=10)
-        return self
-
-    def _save_diff(self, i, output, labels, ch=10):
-        _, c, h, w = output.size()
-        output = output[:, ch].squeeze()
-        labels = labels[:, ch].squeeze()
-        diff = torch.abs(output - labels)
-        diff = diff.to('cpu').detach().numpy().copy()
-        diff = diff.reshape(h, w)
-        plt.imshow(diff, cmap='jet')
-        plt.colorbar()
-        plt.savefig(os.path.join(self.save_diff_path, f'diff_{i}.png'))
-        plt.close()
+        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (29, 8, 6), 'ICVL': (26, 16, 9)}
+        # if os.path.exists(save_img_path) is True:
+        #     shutil.rmtree(save_img_path)
+        os.makedirs(self.save_alls_path, exist_ok=True)
+        # if os.path.exists(save_mat_path) is True:
+        #     shutil.rmtree(save_mat_path)
+        os.makedirs(save_mat_path, exist_ok=True)
 
     def _plot_img(self, ax, img, title='None', colorbar=False):
         if colorbar is not False:
@@ -121,11 +93,14 @@ class Evaluater(object):
     def _save_all(self, i, inputs, outputs, labels):
         save_alls_path = 'save_all'
         _, c, h, w = outputs.size()
-        diff = torch.abs(outputs[:, self.diff_ch].squeeze() - labels[:, self.diff_ch].squeeze())
-        diff = normalize(diff.numpy())
+        diff = torch.abs(outputs, labels).numpy()
+        diff = diff.transpose(1, 2, 0).mean(axis=-1)
+        diff = normalize(diff)
         inputs = normalize(inputs.squeeze().numpy())
-        outputs = normalize(outputs.squeeze().numpy().transpose(1, 2, 0))
-        labels = normalize(labels.squeeze().numpy().transpose(1, 2, 0))
+        outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
+        outputs = normalize(outputs[:, :, self.output_ch[self.data_name]])
+        labels = labels.squeeze().numpy().transpose(1, 2, 0)
+        labels = normalize(labels[:, :, self.output_ch[self.data_name]])
         fig_num = 4
         plt.figure(figsize=(16, 9))
         ax = plt.subplot(1, 4, 1)
@@ -186,10 +161,10 @@ class ReconstEvaluater(Evaluater):
                         _, _, output = model(inputs)
                     else:
                         output = model(inputs)
-                    output_time = time() - step_time
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(output, labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
+                    # evaluate_list.append(f'{output_time:.5f}')
                     self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
                     self._save_all(i, inputs, output, labels)

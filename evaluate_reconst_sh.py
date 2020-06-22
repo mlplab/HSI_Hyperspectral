@@ -2,15 +2,20 @@
 
 
 import os
+import sys
 import torch
+from torchsummary import summary
 from data_loader import PatchEvalDataset
 from model.HSCNN import HSCNN
+from model.HIPN import HSI_Network
+from model.attention_model import Attention_HSI_Model
+from model.dense_net import Dense_HSI_prior_Network
 from evaluate import RMSEMetrics, PSNRMetrics, SAMMetrics
 from evaluate import ReconstEvaluater
 from pytorch_ssim import SSIM
 
 
-parser = argparse.ArgumentParser(description='Train Model')
+parser = argparse.ArgumentParser(description='Evaluate Model')
 parser.add_argument('--dataset', '-d', default='Harvard', type=str, help='Select dataset')
 parser.add_argument('--concat', '-c', default='False', type=str, help='Concat mask by input')
 parser.add_argument('--model_name', '-m', default='HSCNN', type=str, help='Model Name')
@@ -18,7 +23,6 @@ args = parser.parse_args()
 
 
 device = 'cpu'
-# data_name = 'Harvard'
 data_name = args.dataset
 if args.concat is 'False':
     concat_flag = False
@@ -47,7 +51,6 @@ if __name__ == '__main__':
 
     test_dataset = PatchEvalDataset(test_path, mask_path, transform=None)
     model_name = args.model_name
-    # model_name = 'Attention_HSI_Model'
     if model_name == 'HSCNN':
         model = HSCNN(input_ch, 31, activation='leaky')
     elif model_name == 'HSI_Network':
@@ -58,11 +61,16 @@ if __name__ == '__main__':
         model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
     elif model_name == 'Attention_HSI_GVP':
         model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
+    elif model_name == 'Dense_HSI':
+        model = Dense_HSI_prior_Network(input_ch, 31, block_num=bock_num)
     else:
-        assert 'Enter Model Name'
+        print('Enter Model Name')
+        sys.exit(0)
+
     ckpt = torch.load(ckpt_path, map_location=torch.device(device))
     model.load_state_dict(ckpt['model_state_dict'])
     model.to(device)
+    summary(model, (input_ch, 256, 256))
     rmse_evaluate = RMSEMetrics().to(device)
     psnr_evaluate = PSNRMetrics().to(device)
     ssim_evaluate = SSIM().to(device)
