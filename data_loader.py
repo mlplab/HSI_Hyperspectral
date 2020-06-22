@@ -85,7 +85,7 @@ class PatchMaskDataset(torch.utils.data.Dataset):
         if self.tanh is True:
             label_data = torch.tanh(label_data)
         if self.concat is True:
-            input_data = torch.cat([measurement_data, self.mask], dim=0)
+            input_data = torch.cat([measurement_data, mask], dim=0)
         else:
             input_data = measurement_data
         return input_data, label_data
@@ -113,7 +113,7 @@ class PatchEvalDataset(PatchMaskDataset):
         if self.tanh is True:
             label_data = torch.tanh(label_data)
         if self.concat is True:
-            input_data = torch.cat([measurement_data, self.mask], dim=0)
+            input_data = torch.cat([measurement_data, mask], dim=0)
         else:
             input_data = measurement_data
         return self.data[idx], input_data, label_data
@@ -138,7 +138,7 @@ class CallbackDataset(PatchMaskDataset):
         if self.tanh is True:
             label_data = torch.tanh(label_data)
         if self.concat is True:
-            input_data = torch.cat([measurement_data, self.mask], dim=0)
+            input_data = torch.cat([measurement_data, mask], dim=0)
         else:
             input_data = measurement_data
         return input_data, label_data
