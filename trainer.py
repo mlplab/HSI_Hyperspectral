@@ -34,9 +34,9 @@ class Trainer(object):
         #                                                             verbose=True,
         #                                                             min_lr=1e-8)
         self.callbacks = callbacks
-        self.psnr = PSNRMetrics()
-        self.sam = SAMMetrics()
-        self.ssim = SSIM()
+        self.psnr = PSNRMetrics().eval()
+        self.sam = SAMMetrics().eval()
+        self.ssim = SSIM().eval()
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
