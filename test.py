@@ -10,15 +10,16 @@ from utils import normalize
 
 
 func_name = transformations.RGB_10_degree_cmfs_to_XYZ_10_degree_cmfs
-start_wave = 400
-last_wave = 700
+start_wave = 420
+last_wave = 720
 # data_name = 'dataset/icvl/mat/icvl.mat'
-data_name = 'dataset/test/stuffed_toys_ms.mat'
+# data_name = 'dataset/test/stuffed_toys_ms.mat'
+data_name = 'img2.mat'
 x = np.arange(start_wave, last_wave + 1, 10)
 
 
 f = scipy.io.loadmat(data_name)
-data = normalize(f['im'])
+data = normalize(f['ref'])
 # rgb = normalize(f['rgb'])
 # plt.imsave('output_img/label.png', rgb)
 print(data.shape)
@@ -35,9 +36,9 @@ for i, ch in enumerate(range(start_wave, last_wave + 1, 10)):
      plt.imsave(f'output_img/{i}_{ch}.png', show_data)
      plt.close()
      # plt.show()
-g_ch =13
-b_ch =6
-for i in range(21, 31):
+g_ch =11
+b_ch =4
+for i in range(19, 31):
      show_data = normalize(data[:, :, (i, g_ch, b_ch)])
      # show_data = trans_data
      # plt.imshow(show_data)
