@@ -71,10 +71,10 @@ if __name__ == '__main__':
     model.load_state_dict(ckpt['model_state_dict'])
     model.to(device)
     summary(model, (input_ch, 256, 256))
-    rmse_evaluate = RMSEMetrics().to(device)
-    psnr_evaluate = PSNRMetrics().to(device)
-    ssim_evaluate = SSIM().to(device)
-    sam_evaluate = SAMMetrics().to(device)
+    rmse_evaluate = RMSEMetrics().to(device).eval()
+    psnr_evaluate = PSNRMetrics().to(device).eval()
+    ssim_evaluate = SSIM().to(device).eval()
+    sam_evaluate = SAMMetrics().to(device).eval()
     evaluate_fn = [rmse_evaluate, psnr_evaluate, ssim_evaluate, sam_evaluate]
 
     evaluate = ReconstEvaluater(data_name, output_img_path, output_mat_path, output_csv_path)
