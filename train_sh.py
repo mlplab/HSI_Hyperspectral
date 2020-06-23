@@ -11,6 +11,7 @@ from trainer import Trainer
 from model.attention_model import Attention_HSI_Model
 from model.HSCNN import HSCNN
 from model.HIPN import HSI_Network
+from model.hyperreconnet import HyperReconNet
 from model.dense_net import Dense_HSI_prior_Network
 from data_loader import PatchMaskDataset, CallbackDataset
 from utils import RandomCrop, RandomHorizontalFlip, RandomRotation
@@ -74,12 +75,14 @@ if model_name == 'HSCNN':
     model = HSCNN(input_ch, 31, activation='leaky')
 elif model_name == 'HSI_Network':
     model = HSI_Network(input_ch, 31)
+elif model_name == 'HyperReconNet':
+    model = HyperReconNet(input_ch, 31)
 elif model_name == 'Attention_HSI':
     model = Attention_HSI_Model(input_ch, 31, mode=None, ratio=4, block_num=block_num)
-elif model_name == 'Attention_HSI_GAP':
-    model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
-elif model_name == 'Attention_HSI_GVP':
-    model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
+# elif model_name == 'Attention_HSI_GAP':
+#     model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
+# elif model_name == 'Attention_HSI_GVP':
+#     model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
 elif model_name == 'Dense_HSI':
     model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
 else:
