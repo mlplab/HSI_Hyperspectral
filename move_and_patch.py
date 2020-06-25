@@ -33,7 +33,7 @@ mask_show_path = os.path.join(save_path, 'mask_show_data')
 
 
 data_key = {'CAVE': 'im', 'Harvard': 'ref', 'ICVL': 'data'}
-data_size = {'CAVE': (512, 512, 31), 'Harvard': (1040, 1392, 31), 'ICVL': (1300, 1392, 31)}
+data_size = {'CAVE': (512, 512, 31), 'Harvard': (1040, 1392, 31), 'ICVL': (1392, 1300, 31)}
 seed_key = {'CAVE': 1, 'Harvard': 2, 'ICVL': 3}
 train_test_idx = {'CAVE': np.array([1] * 20 + [2] * 12),
                   'Harvard': np.array([1] * 40 + [2] * 10),
@@ -49,7 +49,10 @@ def move_data(data_path, data_list, move_path):
 
 
 os.makedirs(save_path, exist_ok=True)
-mask_data = np.random.choice((0., 1.), data_size[data_name], p=(.5, .5))
+mask_data = np.random.choice((0., 1.),
+                             (data_size[data_name][0] + datasize[data_name][2], data_size[data_name][1]),
+                             p=(.5, .5))
+mask_data = np.array([mask_data[i: datad_size[data_name][0]] + i] for i in range(data_size[data_name][-1])).transpose(1, 2, 0)
 scipy.io.savemat(os.path.join(save_path, 'mask.mat'), {'data': mask_data})
 data_list = os.listdir(data_path)
 data_list.sort()
