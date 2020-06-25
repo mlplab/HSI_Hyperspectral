@@ -27,7 +27,7 @@ parser.add_argument('--model_name', '-m', default='HSCNN', type=str, help='Model
 args = parser.parse_args()
 
 
-dt_now = datatime.datetime.now()
+dt_now = datetime.datetime.now()
 batch_size = args.batch_size
 epochs = args.epochs
 if args.concat == 'False':
@@ -53,6 +53,7 @@ mask_path = os.path.join(img_path, 'mask_data')
 callback_path = os.path.join(img_path, 'callback_path')
 callback_mask_path = os.path.join(img_path, 'mask_show_data')
 callback_result_path = os.path.joion('../SCI_result', f'{data_name}_{dt_now.month:02d}{dt_now.day:02d}', f'model_name_{block_num}')
+os.makedirs(callback_result_path, exist_ok=True)
 filter_path = os.path.join('../SCI_dataset', 'D700_CSF.mat')
 ckpt_path = os.path.join('../SCI_ckpt', f'{data_name}_{dt_now.month:02d}{dt_now.day:02d}')
 
@@ -80,7 +81,7 @@ elif model_name == 'Attention_HSI_GVP':
 elif model_name == 'Dense_HSI':
     model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
 else:
-    print 'Enter Model Name'
+    print('Enter Model Name')
     sys.exit(0)
 
 
@@ -97,7 +98,7 @@ print(model_name)
 
 callback_dataset = PatchMaskDataset(callback_path, callback_mask_path, concat=concat_flag)
 draw_ckpt = Draw_Output(callback_dataset, data_name, save_path=callback_result_path, filter_path=filter_path)
-ckpt_cb = ModelCheckPoint(os.path.join(ckpt_path, data_name), model_name + f'_{block_num}',
+ckpt_cb = ModelCheckPoint(ckpt_path, model_name + f'_{block_num}',
                           mkdir=True, partience=1, varbose=True)
 trainer = Trainer(model, criterion, optim, scheduler=scheduler, callbacks=[ckpt_cb, draw_ckpt])
 trainer.train(epochs, train_dataloader, test_dataloader)
