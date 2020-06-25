@@ -8,6 +8,7 @@ from torchsummary import summary
 from data_loader import PatchEvalDataset
 from model.HSCNN import HSCNN
 from model.HIPN import HSI_Network
+from model.hyperreconnet import HyperReconNet
 from model.attention_model import Attention_HSI_Model
 from model.dense_net import Dense_HSI_prior_Network
 from evaluate import RMSEMetrics, PSNRMetrics, SAMMetrics
@@ -24,10 +25,12 @@ args = parser.parse_args()
 
 device = 'cpu'
 data_name = args.dataset
-if args.concat is 'False':
+if args.concat == 'False':
     concat_flag = False
+    input_ch = 1
 else:
     concat_flag = True
+    input_ch = 32
 model_name = args.model_name
 img_path = f'../SCI_dataset/My_{data_name}'
 test_path = os.path.join(img_path, 'eval_data')
@@ -44,16 +47,17 @@ os.makedirs(output_path, exist_ok=True)
 os.makedirs(output_img_path, exist_ok=True)
 os.makedirs(output_mat_path, exist_ok=True)
 block_num = 9
-input_ch = 1
 
 
 if __name__ == '__main__':
 
-    test_dataset = PatchEvalDataset(test_path, mask_path, transform=None)
+    test_dataset = PatchEvalDataset(test_path, mask_path, transform=None, concat=concat_flag)
     model_name = args.model_name
     if model_name == 'HSCNN':
         model = HSCNN(input_ch, 31, activation='leaky')
     elif model_name == 'HSI_Network':
+        model = HSI_Network(input_ch, 31)
+    elif model_name == 'HyperReconNet':
         model = HSI_Network(input_ch, 31)
     elif model_name == 'Attention_HSI':
         model = Attention_HSI_Model(input_ch, 31, mode=None, ratio=4, block_num=block_num)
@@ -70,7 +74,7 @@ if __name__ == '__main__':
     ckpt = torch.load(ckpt_path, map_location=torch.device(device))
     model.load_state_dict(ckpt['model_state_dict'])
     model.to(device)
-    summary(model, (input_ch, 256, 256))
+    # summary(model, (input_ch, 256, 256))
     rmse_evaluate = RMSEMetrics().to(device).eval()
     psnr_evaluate = PSNRMetrics().to(device).eval()
     ssim_evaluate = SSIM().to(device).eval()

@@ -81,8 +81,6 @@ class Evaluater(object):
             cax = divider.append_axes('right', '5%', pad='3%')
             im = ax.imshow(img, cmap='jet')
             plt.colorbar(im, cax=cax)
-        elif self.ch is not None:
-            im = ax.imshow(img[:, :, self.ch])
         else:
             im = ax.imshow(img)
         ax.set_xticks([])
@@ -93,7 +91,7 @@ class Evaluater(object):
     def _save_all(self, i, inputs, outputs, labels):
         save_alls_path = 'save_all'
         _, c, h, w = outputs.size()
-        diff = torch.abs(outputs, labels).numpy()
+        diff = torch.abs(outputs - labels).squeeze().numpy()
         diff = diff.transpose(1, 2, 0).mean(axis=-1)
         diff = normalize(diff)
         inputs = normalize(inputs.squeeze().numpy())
@@ -104,6 +102,8 @@ class Evaluater(object):
         fig_num = 4
         plt.figure(figsize=(16, 9))
         ax = plt.subplot(1, 4, 1)
+        if inputs.shape[0] == 32:
+            inputs = inputs[0]
         ax.imshow(inputs)
         ax.set_xticks([])
         ax.set_yticks([])
@@ -133,6 +133,8 @@ class Evaluater(object):
         output_evaluate.append(means)
         output_evaluate_csv = pd.DataFrame(output_evaluate)
         output_evaluate_csv.to_csv(self.save_csv_path, header=header)
+        print(means)
+        return self
 
     def _step_show(self, pbar, *args, **kwargs):
         if device == 'cuda':
