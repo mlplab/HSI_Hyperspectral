@@ -13,7 +13,7 @@ from model.HSCNN import HSCNN
 from model.HIPN import HSI_Network
 from model.hyperreconnet import HyperReconNet
 from model.dense_net import Dense_HSI_prior_Network
-from data_loader import PatchMaskDataset, CallbackDataset
+from data_loader import PatchMaskDataset
 from utils import RandomCrop, RandomHorizontalFlip, RandomRotation
 from utils import ModelCheckPoint, Draw_Output
 
@@ -30,10 +30,12 @@ args = parser.parse_args()
 dt_now = datatime.datetime.now()
 batch_size = args.batch_size
 epochs = args.epochs
-if args.concat is 'False':
+if args.concat == 'False':
     concat_flag = False
+    input_ch = 1
 else:
     concat_flag = True
+    input_ch = 32
 data_name = args.dataset
 model_name = args.model_name
 block_num = 9
@@ -56,21 +58,13 @@ ckpt_path = os.path.join('../SCI_ckpt', f'{data_name}_{dt_now.month:02d}{dt_now.
 
 
 train_transform = (RandomHorizontalFlip(), torchvision.transforms.ToTensor())
-# train_transform = None
 test_transform = None
-train_dataset = PatchMaskDataset(train_path, mask_path, tanh=False, transform=train_transform, concat=concat_flag)
+train_dataset = PatchMaskDataset(train_path, mask_path, transform=train_transform, concat=concat_flag)
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-test_dataset = PatchMaskDataset(test_path, mask_path, tanh=False, transform=test_transform, concat=concat_flag)
+test_dataset = PatchMaskDataset(test_path, mask_path, transform=test_transform, concat=concat_flag)
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
 
-if concat_flag is True:
-    input_ch = 32
-else:
-    input_ch = 1
-
-
-# model_name = 'Attention_HSI_Model'
 if model_name == 'HSCNN':
     model = HSCNN(input_ch, 31, activation='leaky')
 elif model_name == 'HSI_Network':
@@ -79,10 +73,10 @@ elif model_name == 'HyperReconNet':
     model = HyperReconNet(input_ch, 31)
 elif model_name == 'Attention_HSI':
     model = Attention_HSI_Model(input_ch, 31, mode=None, ratio=4, block_num=block_num)
-# elif model_name == 'Attention_HSI_GAP':
-#     model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
-# elif model_name == 'Attention_HSI_GVP':
-#     model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
+elif model_name == 'Attention_HSI_GAP':
+    model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
+elif model_name == 'Attention_HSI_GVP':
+    model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
 elif model_name == 'Dense_HSI':
     model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
 else:
@@ -101,7 +95,7 @@ summary(model, (input_ch, 64, 64))
 print(model_name)
 
 
-callback_dataset = CallbackDataset(callback_path, callback_mask_path, concat=concat_flag)
+callback_dataset = PatchMaskDataset(callback_path, callback_mask_path, concat=concat_flag)
 draw_ckpt = Draw_Output(callback_dataset, data_name, save_path=callback_result_path, filter_path=filter_path)
 ckpt_cb = ModelCheckPoint(os.path.join(ckpt_path, data_name), model_name + f'_{block_num}',
                           mkdir=True, partience=1, varbose=True)
