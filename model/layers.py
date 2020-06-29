@@ -12,8 +12,8 @@ def mish(x):
     return x * torch.tanh(torch.nn.functional.softplus(x))
 
 
-def leaky_relu(x, gamma=.2):
-    return x if x >= 0 else -gamma * x
+# def leaky_relu(x, gamma=.2):
+#     return x if x >= 0 else -gamma * x
 
 
 class Swish(torch.nn.Module):
@@ -267,7 +267,7 @@ class Attention_HSI_prior_block(torch.nn.Module):
         elif self.activation == 'mish':
             return mish(x)
         elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return leaky_relu(x)
+            return torch.nn.functional.leaky_relu(x)
         else:
             return torch.relu(x)
 
@@ -301,7 +301,7 @@ class BasicBlock(torch.nn.Module):
         elif self.activation == 'mish':
             return mish(x)
         elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return leaky_relu(x)
+            return torch.nn.functional.leaky_relu(x)
         else:
             return torch.relu(x)
 
