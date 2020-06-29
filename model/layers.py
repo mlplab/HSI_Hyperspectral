@@ -181,21 +181,34 @@ class My_HSI_network(torch.nn.Module):
 
 class RAM(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, ratio=None):
+    def __init__(self, input_ch, output_ch, ratio=None, **kwargs):
         super(RAM, self).__init__()
 
         if ratio is None:
             self.ratio = 2
         else:
             self.ratio = ratio
+        self.activation = kwargs.get('attn_activation')
         self.spatial_attn = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1, groups=input_ch)
         self.spectral_pooling = GVP()
         self.spectral_Linear = torch.nn.Linear(input_ch, input_ch // self.ratio)
         self.spectral_attn = torch.nn.Linear(input_ch // self.ratio, output_ch)
 
+    def _activation_fn(self, x):
+        if self.activation == 'relu':
+            return torch.relu(x)
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return torch.nn.functional.leaky_relu(x)
+        else:
+            return x
+
     def forward(self, x):
         batch_size, ch, h, w = x.size()
-        spatial_attn = self.spatial_attn(x)
+        spatial_attn = self._activation_fn(self.spatial_attn(x))
         spectral_pooling = self.spectral_pooling(x).view(-1, ch)
         spectral_linear = torch.relu(self.spectral_Linear(spectral_pooling))
         spectral_attn = self.spectral_attn(spectral_linear).unsqueeze(-1).unsqueeze(-1)
@@ -253,9 +266,10 @@ class Attention_HSI_prior_block(torch.nn.Module):
         ratio = kwargs.get('ratio')
         if ratio is None:
             ratio = 2
+        attn_activation = kwargs.get('attn_activation')
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
-        self.attention = RAM(output_ch, output_ch, ratio=ratio)
+        self.attention = RAM(output_ch, output_ch, ratio=ratio, attn_activation)
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         if self.mode is not None:
             self.spectral_attention = SE_block(output_ch, output_ch, mode=self.mode, ratio=ratio)

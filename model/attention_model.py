@@ -16,22 +16,26 @@ class Attention_HSI_Model(torch.nn.Module):
         if ratio is None:
             ratio = 2
         self.activation = kwargs.get('activation')
+        self.attn_activation = kwargs.get('attn_activation')
         self.output_norm = kwargs.get('output_norm')
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         hsi_block = [Attention_HSI_prior_block(output_ch, output_ch,
                                                activation=self.activation,
+                                               attn_activation = self.attn_activation
                                                ratio=ratio, mode=mode) for _ in range(block_num)]
-        residual_block = [torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1) for _ in range(block_num)]
         self.hsi_block = torch.nn.Sequential(*hsi_block)
-        self.residual_block = torch.nn.Sequential(*residual_block)
+        # residual_block = [torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1) for _ in range(block_num)]
+        # self.residual_block = torch.nn.Sequential(*residual_block)
+        self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1)
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):
         x = self.start_conv(x)
         x_in = x
-        for hsi, residual in zip(self.hsi_block, self.residual_block):
+        # for hsi, residual in zip(self.hsi_block, self.residual_block):
+        for hsi in self.hsi_block:
             x_hsi = hsi(x)
-            x_residual = residual(x)
+            x_residual = self.residual(x)
             x = x_in + x_hsi + x_residual
         return self._output_norm_fn(self.output_conv(x))
 

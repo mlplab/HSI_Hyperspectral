@@ -62,26 +62,23 @@ class HSI_Network(torch.nn.Module):
         self.output_norm = output_norm
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
         self.start_shortcut = torch.nn.Identity()
-        hsi_block = []
-        residual_block = []
-        shortcut = []
-        for _ in range(block_num):
-            hsi_block.append(HSI_prior_block(output_ch, output_ch, feature=feature))
-            residual_block.append(torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1))
-            shortcut.append(torch.nn.Identity())
+        hsi_block = [HSI_prior_block(output_ch, output_ch, feature=feature) for _ in range(block_num)]
         self.hsi_block = torch.nn.Sequential(*hsi_block)
-        self.residual_block = torch.nn.Sequential(*residual_block)
-        self.shortcut = torch.nn.Sequential(*shortcut)
+        self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1)
+        # residual_block = [torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1) for _ in range(block_num)]
+        # self.residual_block = torch.nn.Sequential(*residual_block)
+        # self.shortcut = torch.nn.Sequential(*shortcut)
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):
         x = self.start_conv(x)
-        h = self.start_shortcut(x)
-        for hsi_block, residual_block, shortcut in zip(self.hsi_block, self.residual_block, self.shortcut):
+        # h = self.start_shortcut(x)
+        x_in = x
+        for hsi_block in self.hsi_block:
             x_hsi = hsi_block(x)
-            x_res = residual_block(x)
-            x_shortcut = shortcut(h)
-            x = x_res + x_shortcut + x_hsi
+            x_res = self.residual_block(x)
+            # x_shortcut = shortcut(h)
+            x = x_res + x_hsi + x_in
         return self._output_norm_fn(self.output_conv(x))
 
     def _activation_fn(self, x):
