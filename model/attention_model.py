@@ -14,14 +14,14 @@ class Attention_HSI_Model(torch.nn.Module):
         mode = kwargs['mode']
         ratio = kwargs.get('ratio')
         if ratio is None:
-            ratio = 2
+            ratio = 4
         self.activation = kwargs.get('activation')
         self.attn_activation = kwargs.get('attn_activation')
         self.output_norm = kwargs.get('output_norm')
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         hsi_block = [Attention_HSI_prior_block(output_ch, output_ch,
                                                activation=self.activation,
-                                               attn_activation = self.attn_activation
+                                               attn_activation = self.attn_activation,
                                                ratio=ratio, mode=mode) for _ in range(block_num)]
         self.hsi_block = torch.nn.Sequential(*hsi_block)
         # residual_block = [torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1) for _ in range(block_num)]

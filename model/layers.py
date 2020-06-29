@@ -269,7 +269,7 @@ class Attention_HSI_prior_block(torch.nn.Module):
         attn_activation = kwargs.get('attn_activation')
         self.spatial_1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
-        self.attention = RAM(output_ch, output_ch, ratio=ratio, attn_activation)
+        self.attention = RAM(output_ch, output_ch, ratio=ratio, attn_activation=attn_activation)
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         if self.mode is not None:
             self.spectral_attention = SE_block(output_ch, output_ch, mode=self.mode, ratio=ratio)
