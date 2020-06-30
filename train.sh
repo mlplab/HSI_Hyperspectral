@@ -7,7 +7,7 @@ CMDNAME=`basename $0`
 batch_size=64
 epoch=150
 dataset="Harvard"
-concat = "False"
+concat="False"
 model_name=("HSCNN HSI_Network HyperReconNet Attention_HSI_None Dense_HSI")
 
 
