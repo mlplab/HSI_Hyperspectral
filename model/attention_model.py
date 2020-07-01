@@ -35,7 +35,7 @@ class Attention_HSI_Model(torch.nn.Module):
         # for hsi, residual in zip(self.hsi_block, self.residual_block):
         for hsi in self.hsi_block:
             x_hsi = hsi(x)
-            x_residual = self.residual(x)
+            x_residual = self.residual_block(x)
             x = x_in + x_hsi + x_residual
         return self._output_norm_fn(self.output_conv(x))
 
