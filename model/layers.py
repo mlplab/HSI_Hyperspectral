@@ -214,7 +214,7 @@ class RAM(torch.nn.Module):
         spectral_attn = self.spectral_attn(spectral_linear).unsqueeze(-1).unsqueeze(-1)
 
         # attn_output = torch.sigmoid(spatial_attn + spectral_attn + spectral_pooling.unsqueeze(-1).unsqueeze(-1))
-        attn_output = torch.sigmoid(spatial_attn + spectral_attn)
+        attn_output = torch.sigmoid(spatial_attn * spectral_attn)
         output = attn_output * x
         return output
 
@@ -297,29 +297,32 @@ class Attention_HSI_prior_block(torch.nn.Module):
         return x
 
 
-class BasicBlock(torch.nn.Module):
+class Split_Attention(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, feature=64, **kwargs):
-        super(BasicBlock, self).__init__()
-        self.activation = kwargs.get('activation')
-        self.lambda_step = torch.nn.Parameter(torch.Tensor([.5]))
-        self.soft_thr = torch.nn.Parameter(torch.Tensor([.01]))
-        self.conv_forward1 = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
-        self.conv_forward2 = torch.nn.Conv2d(feature, feature, 3, 1, 1)
-        self.conv_backward1 = torch.nn.Conv2d(feature, feature, 3, 1, 1)
-        self.conv_backward2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
 
-    def _activation_fn(self, x):
-        if self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return torch.nn.functional.leaky_relu(x)
-        else:
-            return torch.relu(x)
+    def __init__(self, input_ch, output_ch, **kwargs):
+
+        ratio = kwargs.get['ratio']
+        if ratio is None:
+            ratio = 2
+        ratio = kwargs.get['ratio']
+        if ratio is None:
+            ratio = 2
+        self.spatial_attn = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1, groups=input_ch)
+        self.spatial_attn_conv = torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1)
+        self.gvp = GVP()
+        self.spatial_attn1 = torch.nn.Linear(input_ch, int(output_ch / ratio))
+        self.spatial_attn2 = torch.nn.Linear(int(output_ch / ratio), output_ch)
+        self.reconst = HSI_Prior_block(output_ch, output_ch, feature=feature)
 
     def forward(self, x):
-
-        x = self._activation_fn(self.conv_forward1(x))
-        x = self.conv_forward2(x)
+        spatial_attn = self.spatial_attn(x)
+        # spatial_attn = self.spatial_attn_conv(x)
+        spatial_attn = torch.sigmoid(spatial_attn) * x
+        spectral_attn = self.gvp(x)
+        spectral_attn = torch.relu(self.spectral_attn1(x))
+        spectral_attn = self.spatial_attn2(x)
+        spectral_attn = spectral_attn * x
+        x = spatial_attn + spectral_attn
+        output = self.reconst(x)
+        return output

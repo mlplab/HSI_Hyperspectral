@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from .layers import Attention_HSI_prior_block
+from .layers import Attention_HSI_prior_block, Split_Attention
 
 
 class Attention_HSI_Model(torch.nn.Module):
@@ -91,6 +91,29 @@ class Attention_HSI_Model_shared_residual(torch.nn.Module):
         else:
             return x
 
+
+class Split_Attention_HSI_Reconst_Model(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, feature=64, block_num=9, **kwargs):
+
+        ratio = kwargs.get('ratio')
+        if ratio is None:
+            ratio = 2
+        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
+        attention_block = [Split_Attention(output_ch, output_ch, feature=feature) for _ in range(block_num)]
+        self.attention_block = torch.nn.Sequential(*attention_block)
+        residual =[torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0) for _ in range(block_num)]
+        self.residual_block = torch.nn.Sequential(*residual)
+        self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
+
+    def forward(self, x):
+        x = self.start_conv(x)
+        x_in = x
+        for attention, residual in zip(self.attention_block, self.residual_block):
+            x_attention = attention(x)
+            x_residual = residual(x)
+            x = x_in + x_attention + x_residual
+        return self._output_norm_fn(self.output_conv(x))
 
 if __name__ == '__main__':
 
