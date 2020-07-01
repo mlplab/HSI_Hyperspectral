@@ -301,6 +301,7 @@ class Split_Attention(torch.nn.Module):
 
 
     def __init__(self, input_ch, output_ch, **kwargs):
+        super(Split_Attention, self).__init__(self)
 
         ratio = kwargs.get['ratio']
         if ratio is None:
