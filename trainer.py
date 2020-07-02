@@ -11,6 +11,7 @@ import torch
 # from utils import psnr
 from evaluate import PSNRMetrics, SAMMetrics
 from pytorch_ssim import SSIM
+from utils import normalize
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -27,12 +28,6 @@ class Trainer(object):
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
-        # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
-        #                                                             mode='min',
-        #                                                             factor=.2,
-        #                                                             patience=2,
-        #                                                             verbose=True,
-        #                                                             min_lr=1e-8)
         self.callbacks = callbacks
         self.psnr = PSNRMetrics().eval()
         self.sam = SAMMetrics().eval()
@@ -65,9 +60,7 @@ class Trainer(object):
                     loss, output = self._step(inputs, labels)
                     train_loss.append(loss.item())
                     show_loss = np.mean(train_loss)
-                    show_train_eval.append([self.psnr(labels, output).item(),
-                                            self.ssim(labels, output).item(),
-                                            self.sam(labels, output).item()])
+                    show_train_eval.append(self._evaluate(output, labels))
                     show_mean = np.mean(show_train_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
@@ -82,10 +75,7 @@ class Trainer(object):
                         loss, output = self._step(inputs, labels, train=False)
                     val_loss.append(loss.item())
                     show_loss = np.mean(val_loss)
-                    # psnr_show = psnr(loss)
-                    show_val_eval.append([self.psnr(labels, output).item(),
-                                          self.ssim(labels, output).item(),
-                                          self.sam(labels, output).item()])
+                    show_val_eval.append(self._evaluate(output, labels))
                     show_mean = np.mean(show_val_eval, axis=0)
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
@@ -122,6 +112,10 @@ class Trainer(object):
         pbar.set_postfix(kwargs)
         return self
 
+    def _evaluate(self, output, label):
+        output = normalize(output)
+        labels = normalize(labels)
+        return [self.psnr(labels, output).item(), self.ssim(labels, output).item(), self.sam(labels, output).item()]
 
 class Deeper_Trainer(Trainer):
 

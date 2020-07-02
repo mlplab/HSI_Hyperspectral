@@ -45,23 +45,20 @@ class RMSEMetrics(torch.nn.Module):
 
 class PSNRMetrics(torch.nn.Module):
 
-    # def __init__(self):
-    #     super(PSNRMetrics, self).__init__()
-    #     self.criterion = torch.nn.MSELoss().eval()
-
-    # def forward(self, x, y):
-    #     return 10. * torch.log10(1. / self.criterion(x, y))
+    def __init__(self):
+        super(PSNRMetrics, self).__init__()
+        self.criterion = torch.nn.MSELoss().eval()
 
     def forward(self, x, y):
-        return 10. * torch.log10(1. / torch.mean((x - y) ** 2))
+        return 10. * torch.log10(1. / self.criterion(x, y))
 
 
 class SAMMetrics(torch.nn.Module):
 
     def forward(self, x, y):
-        x_sqrt = torch.norm(x, dim=0)
-        y_sqrt = torch.norm(y, dim=0)
-        xy = torch.sum(x * y, dim=0)
+        x_sqrt = torch.norm(x, dim=1)
+        y_sqrt = torch.norm(y, dim=1)
+        xy = torch.sum(x * y, dim=1)
         metrics = xy / (x_sqrt * y_sqrt + 1e-6)
         angle = torch.acos(metrics)
         return torch.mean(angle)
@@ -165,14 +162,15 @@ class ReconstEvaluater(Evaluater):
                         _, _, output = model(inputs)
                     else:
                         output = model(inputs)
-                    metrics_output = output.squeeze()
-                    metrics_labels = labels.squeeze()
+                    metrics_output = normalize(output)
+                    metrics_labels = normalize(labels)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
+                        # metrics = metrics_func(output, labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
                     # evaluate_list.append(f'{output_time:.5f}')
                     output_evaluate.append(evaluate_list)
-                    show_evaluate = np.mean(np.mean(output_evaluate, dtype=np.float32), axis=0)
+                    show_evaluate = np.mean(np.array(output_evaluate, dtype=np.float32), axis=0)
                     self._step_show(pbar, Metrics=show_evaluate)
                     del show_evaluate
                     self._save_all(i, inputs, output, labels)
