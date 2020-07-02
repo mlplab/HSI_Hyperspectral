@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from .layers import Attention_HSI_prior_block, Split_Attention, Split_Attention_CSAR_Base
+from .layers import Attention_HSI_prior_block
 
 
 class Attention_HSI_Model_share(torch.nn.Module):
