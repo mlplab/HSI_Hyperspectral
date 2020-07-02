@@ -127,6 +127,7 @@ class Evaluater(object):
         return self
 
     def _save_csv(self, output_evaluate, header):
+        header.append('Time')
         output_evaluate_np = np.array(output_evaluate, dtype=np.float32)
         means = list(np.mean(output_evaluate_np, axis=0))
         output_evaluate.append(means)
@@ -159,16 +160,19 @@ class ReconstEvaluater(Evaluater):
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
                     if hcr is True:
+                        start_time = time()
                         _, _, output = model(inputs)
+                        finish_time = time() - start_time
                     else:
+                        start_time = time()
                         output = model(inputs)
+                        finish_time = time() - start_time
                     metrics_output = normalize(output)
                     metrics_labels = normalize(labels)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
-                        # metrics = metrics_func(output, labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
-                    # evaluate_list.append(f'{output_time:.5f}')
+                    evaluate_list.appned(f'{finish_time:.5f}')
                     output_evaluate.append(evaluate_list)
                     show_evaluate = np.mean(np.array(output_evaluate, dtype=np.float32), axis=0)
                     self._step_show(pbar, Metrics=show_evaluate)
@@ -197,15 +201,20 @@ class ReconstEvaluater_skimage(Evaluater):
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
                     if hcr is True:
+                        start_time = time()
                         _, _, output = model(inputs)
+                        finish_time = time() - start_time
                     else:
+                        start_time = time()
                         output = model(inputs)
+                        finish_time = time() - start_time
                     metrics_output = normalize(output.squeeze().numpy().transpose(1, 2, 0))
                     metrics_labels = normalize(labels.squeeze().numpy().transpose(1, 2, 0))
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
                     # evaluate_list.append(f'{output_time:.5f}')
+                    evaluate_list.append(f'{finish_time:.5f}')
                     output_evaluate.append(evaluate_list)
                     show_evaluate = np.mean(np.mean(output_evaluate, dtype=np.float32), axis=0)
                     self._step_show(pbar, Metrics=show_evaluate)
