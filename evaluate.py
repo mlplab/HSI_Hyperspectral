@@ -28,30 +28,25 @@ class RMSEMetrics(torch.nn.Module):
 
     def __init__(self):
         super(RMSEMetrics, self).__init__()
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = torch.nn.MSELoss().eval()
 
     def forward(self, x, y):
-        return torch.sqrt(self.criterion(x, y))
+        return torch.sqrt(self.criterion(x, y).item())
 
 
 class PSNRMetrics(torch.nn.Module):
 
     def __init__(self):
         super(PSNRMetrics, self).__init__()
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = torch.nn.MSELoss().eval()
 
     def forward(self, x, y):
-        return 10. * torch.log10(1. / self.criterion(x, y))
+        return 10. * torch.log10(1. / self.criterion(x, y).item())
 
 
 class SAMMetrics(torch.nn.Module):
 
-    def __init__(self):
-        super(SAMMetrics, self).__init__()
-
     def forward(self, x, y):
-        # x_sqrt = torch.sqrt(torch.sum(x * x, dim=0))
-        # y_sqrt = torch.sqrt(torch.sum(y * y, dim=0))
         x_sqrt = torch.norm(x, dim=0)
         y_sqrt = torch.norm(y, dim=0)
         xy = torch.sum(x * y, dim=0)
@@ -67,12 +62,8 @@ class Evaluater(object):
         self.save_alls_path = save_img_path
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
-        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (29, 8, 6), 'ICVL': (26, 16, 9)}
-        # if os.path.exists(save_img_path) is True:
-        #     shutil.rmtree(save_img_path)
+        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (21, 13, 10), 'ICVL': (26, 16, 9)}
         os.makedirs(self.save_alls_path, exist_ok=True)
-        # if os.path.exists(save_mat_path) is True:
-        #     shutil.rmtree(save_mat_path)
         os.makedirs(save_mat_path, exist_ok=True)
 
     def _plot_img(self, ax, img, title='None', colorbar=False):

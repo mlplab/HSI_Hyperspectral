@@ -233,7 +233,7 @@ class Draw_Output(object):
         self.verbose = verbose
         # self.ch = ch
         # self.filter = np.array(scipy.io.loadmat(filter_path)['T'], dtype=np.float32)
-        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (29, 8, 6), 'ICVL': (26, 16, 9)}
+        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (21, 13, 10), 'ICVL': (26, 16, 9)}
 
         ###########################################################
         # Make output directory
@@ -297,26 +297,3 @@ class Draw_Output(object):
         plt.yticks([])
         plt.title(title)
         return self
-
-
-class HSI2RGB(object):
-
-    def __init__(self, filter_path, data_key='T'):
-        self.filter = scipy.io.loadmat(filter_path)['T']
-        self.HSI_ch = self.filter.shape[0]
-        self.RGB_ch = self.filter.shape[1]
-
-    def callback(self, HSI_img, uint=False):
-        HSI_img_np = np.array(HSI_img)
-        RGB_img = normalize(HSI_img_np.dot(self.filter))
-        if uint is True:
-            RGB_img = np.array(RGB_img * 255., dtype=np.uint8)
-        return RGB_img
-
-
-def plot_img(img, title='Title'):
-    plt.imshow(show_data)
-    plt.xtricks([])
-    plt.ytricks([])
-    plt.title('Output')
-    return None
