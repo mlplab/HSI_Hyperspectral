@@ -45,12 +45,15 @@ class RMSEMetrics(torch.nn.Module):
 
 class PSNRMetrics(torch.nn.Module):
 
-    def __init__(self):
-        super(PSNRMetrics, self).__init__()
-        self.criterion = torch.nn.MSELoss().eval()
+    # def __init__(self):
+    #     super(PSNRMetrics, self).__init__()
+    #     self.criterion = torch.nn.MSELoss().eval()
+
+    # def forward(self, x, y):
+    #     return 10. * torch.log10(1. / self.criterion(x, y))
 
     def forward(self, x, y):
-        return 10. * torch.log10(1. / self.criterion(x, y))
+        return 10. * torch.log10(1. / torch.mean((x - y) ** 2))
 
 
 class SAMMetrics(torch.nn.Module):
@@ -127,7 +130,6 @@ class Evaluater(object):
         return self
 
     def _save_csv(self, output_evaluate, header):
-        header.insert(0, 'ID')
         output_evaluate_np = np.array(output_evaluate, dtype=np.float32)
         means = list(np.mean(output_evaluate_np, axis=0))
         output_evaluate.append(means)
@@ -156,19 +158,23 @@ class ReconstEvaluater(Evaluater):
             # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
             with tqdm(dataset, ncols=columns, ascii=True) as pbar:
                 for i, (idx, inputs, labels) in enumerate(pbar):
-                    evaluate_list = [f'{i:05d}']
+                    evaluate_list = []
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
                     if hcr is True:
                         _, _, output = model(inputs)
                     else:
                         output = model(inputs)
+                    metrics_output = output.squeeze()
+                    metrics_labels = labels.squeeze()
                     for metrics_func in evaluate_fn:
-                        metrics = metrics_func(output, labels)
+                        metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
                     # evaluate_list.append(f'{output_time:.5f}')
-                    self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
+                    show_evaluate = np.mean(np.mean(output_evaluate, dtype=np.float32), axis=0)
+                    self._step_show(pbar, Metrics=show_evaluate)
+                    del show_evaluate
                     self._save_all(i, inputs, output, labels)
                     self._save_mat(i, idx, output)
         self._save_csv(output_evaluate, header)
@@ -189,21 +195,23 @@ class ReconstEvaluater_skimage(Evaluater):
             # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
             with tqdm(dataset, ncols=columns, ascii=True) as pbar:
                 for i, (idx, inputs, labels) in enumerate(pbar):
-                    evaluate_list = [f'{i:05d}']
+                    evaluate_list = []
                     inputs = inputs.unsqueeze(0).to(device)
                     labels = labels.unsqueeze(0).to(device)
                     if hcr is True:
                         _, _, output = model(inputs)
                     else:
                         output = model(inputs)
-                    metrics_output = output.squeeze().numpy().transpose(1, 2, 0)
-                    metrics_label = label.squeeze().numpy().transpose(1, 2, 0)
+                    metrics_output = normalize(output.squeeze().numpy().transpose(1, 2, 0))
+                    metrics_labels = normalize(labels.squeeze().numpy().transpose(1, 2, 0))
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
                     # evaluate_list.append(f'{output_time:.5f}')
-                    self._step_show(pbar, Metrics=evaluate_list)
                     output_evaluate.append(evaluate_list)
+                    show_evaluate = np.mean(np.mean(output_evaluate, dtype=np.float32), axis=0)
+                    self._step_show(pbar, Metrics=show_evaluate)
+                    del show_evaluate
                     # self._save_all(i, inputs, output, labels)
                     # self._save_mat(i, idx, output)
         self._save_csv(output_evaluate, header)
