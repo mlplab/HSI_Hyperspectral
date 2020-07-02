@@ -11,7 +11,7 @@ class Attention_HSI_Model_share(torch.nn.Module):
     def __init__(self, input_ch, output_ch, feature=64, block_num=9, **kwargs):
         super(Attention_HSI_Model_share, self).__init__()
 
-        mode = kwargs['mode']
+        mode = kwargs.get('mode')
         ratio = kwargs.get('ratio')
         if ratio is None:
             ratio = 4
