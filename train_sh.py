@@ -8,9 +8,9 @@ import torch
 import torchvision
 from torchsummary import summary
 from trainer import Trainer
-from model.attention_model import Attention_HSI_Model
+from model.attention_model import Attention_HSI_Model_share
 from model.HSCNN import HSCNN
-from model.HIPN import HSI_Network
+from model.HIPN import HSI_Network_share
 from model.hyperreconnet import HyperReconNet
 from model.dense_net import Dense_HSI_prior_Network
 from data_loader import PatchMaskDataset
@@ -69,11 +69,11 @@ test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_siz
 if model_name == 'HSCNN':
     model = HSCNN(input_ch, 31, activation='leaky')
 elif model_name == 'HSI_Network':
-    model = HSI_Network(input_ch, 31)
+    model = HSI_Network_share(input_ch, 31, block_num=block_num)
 elif model_name == 'HyperReconNet':
     model = HyperReconNet(input_ch, 31)
 elif model_name == 'Attention_HSI':
-    model = Attention_HSI_Model(input_ch, 31, mode=None, ratio=4, block_num=block_num)
+    model = Attention_HSI_Model_share(input_ch, 31, mode=None, ratio=4, block_num=block_num)
 elif model_name == 'Attention_HSI_GAP':
     model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
 elif model_name == 'Attention_HSI_GVP':

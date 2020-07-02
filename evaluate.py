@@ -31,7 +31,7 @@ class RMSEMetrics(torch.nn.Module):
         self.criterion = torch.nn.MSELoss().eval()
 
     def forward(self, x, y):
-        return torch.sqrt(self.criterion(x, y).item())
+        return torch.sqrt(self.criterion(x, y))
 
 
 class PSNRMetrics(torch.nn.Module):
@@ -41,7 +41,7 @@ class PSNRMetrics(torch.nn.Module):
         self.criterion = torch.nn.MSELoss().eval()
 
     def forward(self, x, y):
-        return 10. * torch.log10(1. / self.criterion(x, y).item())
+        return 10. * torch.log10(1. / self.criterion(x, y))
 
 
 class SAMMetrics(torch.nn.Module):
