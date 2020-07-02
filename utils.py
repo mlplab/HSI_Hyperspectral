@@ -233,7 +233,7 @@ class Draw_Output(object):
         self.verbose = verbose
         # self.ch = ch
         # self.filter = np.array(scipy.io.loadmat(filter_path)['T'], dtype=np.float32)
-        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (21, 13, 10), 'ICVL': (26, 16, 9)}
+        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (21, 11, 12), 'ICVL': (26, 16, 9)}
 
         ###########################################################
         # Make output directory
