@@ -114,7 +114,7 @@ class Trainer(object):
 
     def _evaluate(self, output, label):
         output = normalize(output)
-        labels = normalize(labels)
+        labels = normalize(label)
         return [self.psnr(labels, output).item(), self.ssim(labels, output).item(), self.sam(labels, output).item()]
 
 class Deeper_Trainer(Trainer):
