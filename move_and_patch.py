@@ -48,9 +48,9 @@ def move_data(data_path, data_list, move_path):
 
 os.makedirs(save_path, exist_ok=True)
 mask_data = np.random.choice((0., 1.),
-                             (data_size[data_name][0] + datasize[data_name][2], data_size[data_name][1]),
+                             (data_size[data_name][0] + data_size[data_name][2], data_size[data_name][1]),
                              p=(.5, .5))
-mask_data = np.array([mask_data[i: datad_size[data_name][0] + i] for i in range(data_size[data_name][-1])]).transpose(1, 2, 0)
+mask_data = np.array([mask_data[i: data_size[data_name][0] + i] for i in range(data_size[data_name][-1])]).transpose(1, 2, 0)
 scipy.io.savemat(os.path.join(save_path, 'mask.mat'), {'data': mask_data})
 data_list = os.listdir(data_path)
 data_list.sort()
