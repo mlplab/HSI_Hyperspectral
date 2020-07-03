@@ -22,7 +22,7 @@ torch.set_printoptions(precision=8)
 
 class Trainer(object):
 
-    def __init__(self, model, criterion, optimizer, scheduler=None, callbacks=None):
+    def __init__(self, model, criterion, optimizer, scheduler=None, callbacks=None, **kwargs):
 
         self.model = model
         self.criterion = criterion
@@ -32,6 +32,11 @@ class Trainer(object):
         self.psnr = PSNRMetrics().eval()
         self.sam = SAMMetrics().eval()
         self.ssim = SSIM().eval()
+        shape = kwargs.get('shape')
+        if shape is None:
+            shape = (512, 512, 31)
+        self.zeros = torch.zeros(shape).to(device)
+        self.ones = torch.ones(shape).to(device)
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
@@ -113,9 +118,15 @@ class Trainer(object):
         return self
 
     def _evaluate(self, output, label):
-        output = normalize(output)
-        labels = normalize(label)
+        output = self._cut(output)
+        labels = self._cut(label)
         return [self.psnr(labels, output).item(), self.ssim(labels, output).item(), self.sam(labels, output).item()]
+
+    def _cut(self, x):
+        x = torch.where(x > 1., self.ones, x)
+        x = torch.where(x < 0., self.zeros, x)
+        return x
+
 
 class Deeper_Trainer(Trainer):
 
