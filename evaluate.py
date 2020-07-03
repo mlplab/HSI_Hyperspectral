@@ -72,6 +72,11 @@ class Evaluater(object):
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
         self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (21, 11, 12), 'ICVL': (26, 16, 9)}
+        shape = kwargs.get('shape')
+        if shape is None:
+            shape = (512, 512, 31)
+        self.zeros = torch.zeros(shape)
+        self.ones = torch.ones(shape)
         os.makedirs(self.save_alls_path, exist_ok=True)
         os.makedirs(save_mat_path, exist_ok=True)
 
@@ -167,8 +172,10 @@ class ReconstEvaluater(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = output
-                    metrics_labels = labels
+                    metrics_output = self._cut(output)
+                    metrics_labels = self._cut(labels)
+                    # metrics_output = output
+                    # metrics_labels = labels
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
@@ -180,8 +187,12 @@ class ReconstEvaluater(Evaluater):
                     self._save_all(i, inputs, output, labels)
                     self._save_mat(i, idx, output)
         self._save_csv(output_evaluate, header)
-
         return self
+
+    def _cut(self, x):
+        x = torch.where(x > 1., self.ones, x)
+        x = torch.where(x < 0., self.zeros, x)
+        return x
 
 
 
@@ -208,8 +219,8 @@ class ReconstEvaluater_skimage(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = output.squeeze().numpy().transpose(1, 2, 0)
-                    metrics_labels = labels.squeeze().numpy().transpose(1, 2, 0)
+                    metrics_output = self._cut(output.squeeze().numpy().transpose(1, 2, 0)
+                    metrics_labels = self._cut(labels.squeeze().numpy().transpose(1, 2, 0)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
@@ -224,3 +235,8 @@ class ReconstEvaluater_skimage(Evaluater):
         self._save_csv(output_evaluate, header)
 
         return self
+
+    def _cut(self, x):
+        x = np.where(x > 1., 1, x)
+        x = np.where(x < 0., 0, x)
+        return x
