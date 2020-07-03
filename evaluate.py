@@ -167,8 +167,8 @@ class ReconstEvaluater(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = normalize(output)
-                    metrics_labels = normalize(labels)
+                    metrics_output = output
+                    metrics_labels = labels
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
@@ -208,8 +208,8 @@ class ReconstEvaluater_skimage(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = normalize(output.squeeze().numpy().transpose(1, 2, 0))
-                    metrics_labels = normalize(labels.squeeze().numpy().transpose(1, 2, 0))
+                    metrics_output = output.squeeze().numpy().transpose(1, 2, 0)
+                    metrics_labels = labels.squeeze().numpy().transpose(1, 2, 0)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
