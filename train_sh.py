@@ -89,7 +89,7 @@ model.to(device)
 criterion = torch.nn.MSELoss().to(device)
 param = list(model.parameters())
 optim = torch.optim.Adam(lr=1e-3, params=param)
-scheduler = torch.optim.lr_scheduler.StepLR(optim, 10, .9)
+scheduler = torch.optim.lr_scheduler.StepLR(optim, 50, .1)
 
 
 summary(model, (input_ch, 64, 64))
