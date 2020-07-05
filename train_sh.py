@@ -8,11 +8,11 @@ import torch
 import torchvision
 from torchsummary import summary
 from trainer import Trainer
-from model.attention_model import Attention_HSI_Model_share
 from model.HSCNN import HSCNN
 from model.HIPN import HSI_Network_share
 from model.hyperreconnet import HyperReconNet
 from model.dense_net import Dense_HSI_prior_Network
+from model.attention_model import Attention_HSI_Model_share
 from data_loader import PatchMaskDataset
 from utils import RandomCrop, RandomHorizontalFlip, RandomRotation
 from utils import ModelCheckPoint, Draw_Output
@@ -24,6 +24,7 @@ parser.add_argument('--epochs', '-e', default=150, type=int, help='Train eopch s
 parser.add_argument('--dataset', '-d', default='Harvard', type=str, help='Select dataset')
 parser.add_argument('--concat', '-c', default='False', type=str, help='Concat mask by input')
 parser.add_argument('--model_name', '-m', default='HSCNN', type=str, help='Model Name')
+parser.add_argument('--block_num', '-bn', default=9, type=int, help='Model Block Number')
 args = parser.parse_args()
 
 
@@ -38,7 +39,7 @@ else:
     input_ch = 32
 data_name = args.dataset
 model_name = args.model_name
-block_num = 9
+block_num = args.block_num
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -52,7 +53,7 @@ test_path = os.path.join(img_path, 'test_patch_data')
 mask_path = os.path.join(img_path, 'mask_data')
 callback_path = os.path.join(img_path, 'callback_path')
 callback_mask_path = os.path.join(img_path, 'mask_show_data')
-callback_result_path = os.path.join('../SCI_result', f'{data_name}_{dt_now.month:02d}{dt_now.day:02d}', f'model_name_{block_num}')
+callback_result_path = os.path.join('../SCI_result', f'{data_name}_{dt_now.month:02d}{dt_now.day:02d}', f'{model_name}_{block_num}')
 os.makedirs(callback_result_path, exist_ok=True)
 filter_path = os.path.join('../SCI_dataset', 'D700_CSF.mat')
 ckpt_path = os.path.join('../SCI_ckpt', f'{data_name}_{dt_now.month:02d}{dt_now.day:02d}')
@@ -68,16 +69,12 @@ test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_siz
 
 if model_name == 'HSCNN':
     model = HSCNN(input_ch, 31, activation='leaky')
-elif model_name == 'HSI_Network':
+elif model_name == 'DeepSSPrior':
     model = HSI_Network_share(input_ch, 31, block_num=block_num)
 elif model_name == 'HyperReconNet':
     model = HyperReconNet(input_ch, 31)
-elif model_name == 'Attention_HSI':
+elif model_name == 'Attention':
     model = Attention_HSI_Model_share(input_ch, 31, mode=None, ratio=4, block_num=block_num)
-elif model_name == 'Attention_HSI_GAP':
-    model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
-elif model_name == 'Attention_HSI_GVP':
-    model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
 elif model_name == 'Dense_HSI':
     model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
 else:
@@ -89,16 +86,16 @@ model.to(device)
 criterion = torch.nn.MSELoss().to(device)
 param = list(model.parameters())
 optim = torch.optim.Adam(lr=1e-3, params=param)
-scheduler = torch.optim.lr_scheduler.StepLR(optim, 50, .1)
+scheduler = torch.optim.lr_scheduler.StepLR(optim, 25, .5)
 
 
 summary(model, (input_ch, 64, 64))
 print(model_name)
 
 
-callback_dataset = PatchMaskDataset(callback_path, callback_mask_path, concat=concat_flag)
-draw_ckpt = Draw_Output(callback_dataset, data_name, save_path=callback_result_path, filter_path=filter_path)
+# callback_dataset = PatchMaskDataset(callback_path, callback_mask_path, concat=concat_flag)
+# draw_ckpt = Draw_Output(callback_dataset, data_name, save_path=callback_result_path, filter_path=filter_path)
 ckpt_cb = ModelCheckPoint(ckpt_path, model_name + f'_{block_num}',
                           mkdir=True, partience=1, varbose=True)
-trainer = Trainer(model, criterion, optim, scheduler=scheduler, callbacks=[ckpt_cb, draw_ckpt])
+trainer = Trainer(model, criterion, optim, scheduler=scheduler, callbacks=[ckpt_cb])
 trainer.train(epochs, train_dataloader, test_dataloader)
