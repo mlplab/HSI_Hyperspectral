@@ -34,9 +34,7 @@ class Trainer(object):
         self.ssim = SSIM().eval()
         shape = kwargs.get('shape')
         if shape is None:
-            shape = (512, 512, 31)
-        self.zeros = torch.zeros(shape).to(device)
-        self.ones = torch.ones(shape).to(device)
+            shape = (64, 31, 48, 48)
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
@@ -123,8 +121,9 @@ class Trainer(object):
         return [self.psnr(labels, output).item(), self.ssim(labels, output).item(), self.sam(labels, output).item()]
 
     def _cut(self, x):
-        x = torch.where(x > 1., self.ones, x)
-        x = torch.where(x < 0., self.zeros, x)
+        bs, _, _, _ = x.size()
+        x = torch.where(x > 1., self.ones[:bs], x)
+        x = torch.where(x < 0., self.zeros[:bs], x)
         return x
 
 
