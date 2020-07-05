@@ -62,7 +62,7 @@ class HSI_Network_share(torch.nn.Module):
         self.start_shortcut = torch.nn.Identity()
         hsi_block = [HSI_prior_block(output_ch, output_ch, feature=feature) for _ in range(block_num)]
         self.hsi_block = torch.nn.Sequential(*hsi_block)
-        self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1)
+        self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):

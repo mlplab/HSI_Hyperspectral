@@ -24,7 +24,7 @@ class Attention_HSI_Model_share(torch.nn.Module):
                                                attn_activation = self.attn_activation,
                                                ratio=ratio, mode=mode) for _ in range(block_num)]
         self.hsi_block = torch.nn.Sequential(*hsi_block)
-        self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 3, 1, 1)
+        self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):
