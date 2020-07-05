@@ -10,7 +10,18 @@ from tqdm import tqdm
 from utils import make_patch, patch_mask
 
 
-data_name = 'CAVE'
+patch_size = 48
+patch_step = 48
+show_size = 512
+show_step = 512
+
+
+parser = argparse.ArgumentParser(description='Train Model')
+parser.add_argument('--dataset', '-d', default='Harvard', type=str, help='Select dataset')
+args = parser.parse_args()
+
+
+data_name = args.dataset
 data_path = f'../SCI_dataset/{data_name}'
 save_path = f'../SCI_dataset/My_{data_name}'
 
@@ -66,15 +77,15 @@ move_data(data_path, train_list, train_data_path)
 move_data(data_path, test_list, test_data_path)
 
 
-make_patch(train_data_path, train_patch_path, size=64, step=64, ch=31, data_key=data_key[data_name])
-make_patch(test_data_path, test_patch_path, size=64, step=64, ch=31, data_key=data_key[data_name])
+make_patch(train_data_path, train_patch_path, size=patch_size,step=patch_step, ch=31, data_key=data_key[data_name])
+make_patch(test_data_path, test_patch_path, size=patch_size, step=patch_step, ch=31, data_key=data_key[data_name])
 make_patch(test_data_path, eval_path, size=256, step=256, ch=31, data_key=data_key[data_name])
-make_patch(test_data_path, eval_show_path, size=512, step=512, ch=31, data_key=data_key[data_name])
+make_patch(test_data_path, eval_show_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
 
 
-patch_mask(os.path.join(save_path, 'mask.mat'), mask_path, size=64, step=64, ch=31)
+patch_mask(os.path.join(save_path, 'mask.mat'), mask_path, size=patch_size, step=patch_step, ch=31)
 patch_mask(os.path.join(save_path, 'mask.mat'), eval_mask_path, size=256, step=256, ch=31)
-patch_mask(os.path.join(save_path, 'mask.mat'), mask_show_path, size=512, step=512, ch=31)
+patch_mask(os.path.join(save_path, 'mask.mat'), mask_show_path, size=show_size, step=show_step, ch=31)
 
 
 callback_list = os.listdir(eval_show_path)
