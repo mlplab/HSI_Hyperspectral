@@ -179,7 +179,7 @@ class ReconstEvaluater(Evaluater):
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
-                    evaluate_list.appned(f'{finish_time:.5f}')
+                    evaluate_list.append(f'{finish_time:.5f}')
                     output_evaluate.append(evaluate_list)
                     show_evaluate = np.mean(np.array(output_evaluate, dtype=np.float32), axis=0)
                     self._step_show(pbar, Metrics=show_evaluate)
