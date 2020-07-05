@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser(description='Evaluate Model')
 parser.add_argument('--dataset', '-d', default='Harvard', type=str, help='Select dataset')
 parser.add_argument('--concat', '-c', default='False', type=str, help='Concat mask by input')
 parser.add_argument('--model_name', '-m', default='HSCNN', type=str, help='Model Name')
+parser.add_argument('--block_num', '-b', default=9, type=int, help='Model Block Number')
 args = parser.parse_args()
 
 
@@ -32,21 +33,21 @@ else:
     concat_flag = True
     input_ch = 32
 model_name = args.model_name
+block_num = args.block_num
 img_path = f'../SCI_dataset/My_{data_name}'
 test_path = os.path.join(img_path, 'eval_data')
 mask_path = os.path.join(img_path, 'eval_mask_data')
-ckpt_dir = os.path.join(f'../SCI_ckpt/{data_name}', model_name)
+ckpt_dir = os.path.join(f'../SCI_ckpt/{data_name}', f'{model_name}_{block_num}')
 ckpt_list = os.listdir(ckpt_dir)
 ckpt_list.sort()
 ckpt_path = os.path.join(ckpt_dir, ckpt_list[-1])
-output_path = os.path.join('../SCI_result/', data_path, model_name)
+output_path = os.path.join('../SCI_result/', data_name, f'{model_name}_{block_num}')
 output_img_path = os.path.join(output_path, 'output_img')
 output_mat_path = os.path.join(output_path, 'output_mat')
 output_csv_path = os.path.join(output_path, 'output.csv')
 os.makedirs(output_path, exist_ok=True)
 os.makedirs(output_img_path, exist_ok=True)
 os.makedirs(output_mat_path, exist_ok=True)
-block_num = 9
 
 
 if __name__ == '__main__':
@@ -55,18 +56,14 @@ if __name__ == '__main__':
     model_name = args.model_name
     if model_name == 'HSCNN':
         model = HSCNN(input_ch, 31, activation='leaky')
-    elif model_name == 'HSI_Network':
-        model = HSI_Network(input_ch, 31)
+    elif model_name == 'DeepSSPrior':
+        model = HSI_Network_share(input_ch, 31, block_num=block_num)
     elif model_name == 'HyperReconNet':
-        model = HSI_Network(input_ch, 31)
-    elif model_name == 'Attention_HSI':
-        model = Attention_HSI_Model(input_ch, 31, mode=None, ratio=4, block_num=block_num)
-    elif model_name == 'Attention_HSI_GAP':
-        model = Attention_HSI_Model(input_ch, 31, mode='GAP', ratio=4, block_num=block_num)
-    elif model_name == 'Attention_HSI_GVP':
-        model = Attention_HSI_Model(input_ch, 31, mode='GVP', ratio=4, block_num=block_num)
+        model = HyperReconNet(input_ch, 31)
+    elif model_name == 'Attention':
+        model = Attention_HSI_Model_share(input_ch, 31, mode=None, ratio=4, block_num=block_num)
     elif model_name == 'Dense_HSI':
-        model = Dense_HSI_prior_Network(input_ch, 31, block_num=bock_num)
+        model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
     else:
         print('Enter Model Name')
         sys.exit(0)
@@ -75,11 +72,10 @@ if __name__ == '__main__':
     model.load_state_dict(ckpt['model_state_dict'])
     model.to(device)
     # summary(model, (input_ch, 256, 256))
-    rmse_evaluate = RMSEMetrics().to(device).eval()
     psnr_evaluate = PSNRMetrics().to(device).eval()
     ssim_evaluate = SSIM().to(device).eval()
     sam_evaluate = SAMMetrics().to(device).eval()
-    evaluate_fn = [rmse_evaluate, psnr_evaluate, ssim_evaluate, sam_evaluate]
+    evaluate_fn = [psnr_evaluate, ssim_evaluate, sam_evaluate]
 
     evaluate = ReconstEvaluater(data_name, output_img_path, output_mat_path, output_csv_path)
-    evaluate.metrics(model, test_dataset, evaluate_fn, ['RMSE', 'PSNR', 'SSIM', 'SAM'], hcr=False)
+    evaluate.metrics(model, test_dataset, evaluate_fn, ['PSNR', 'SSIM', 'SAM'], hcr=False)
