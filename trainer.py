@@ -35,6 +35,8 @@ class Trainer(object):
         shape = kwargs.get('shape')
         if shape is None:
             shape = (64, 31, 48, 48)
+        self.zeros = torch.zeros(shape).to(device)
+        self.ones = torch.ones(shape).to(device)
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
