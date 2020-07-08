@@ -27,14 +27,14 @@ class Dense_HSI_prior_Network(torch.nn.Module):
         x = self.start_conv(x)
         x_in = x
         x_stack = []
-        for hsi, dense_conv in zip(self.hsi_block, self.dense_conv):
-            x_res = self.residual_block(x)
+        for hsi, res, dense_conv in zip(self.hsi_block, self.residual_block, self.dense_conv):
+            x_res = res(x)
             x_hsi = hsi(x)
-            x = torch.cat((x_hsi, res), dim=1)
+            x = torch.cat((x_hsi, x_res), dim=1)
             x = dense_conv(x)
-            x = x + x_in
             x_stack.append(x)
         x_stack = torch.cat(x_stack, dim=1)
+        x_stack = x_stack + x_in
         return self._output_norm(self.output_conv(x_stack))
 
     def _output_norm(self, x):
