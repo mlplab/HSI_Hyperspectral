@@ -18,7 +18,7 @@ class Dense_HSI_prior_Network(torch.nn.Module):
         stack_num = output_ch * block_num
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         # self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
-        self.residual_block = torch.ModuleList([Conv2d(output_ch, output_ch, 1, 1, 0) for _ in range(block_num)])
+        self.residual_block = torch.nn.ModuleList([Conv2d(output_ch, output_ch, 1, 1, 0) for _ in range(block_num)])
         self.hsi_block = torch.nn.ModuleList([HSI_prior_block(output_ch, output_ch, feature=feature, activation=activation) for _ in range(block_num)])
         self.dense_conv = torch.nn.ModuleList([torch.nn.Conv2d(output_ch * 2, output_ch, 3, 1, 1) for _ in range(block_num)])
         self.output_conv = torch.nn.Conv2d(stack_num, output_ch, 1, 1, 0)
