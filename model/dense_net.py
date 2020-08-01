@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from .layers import HSI_prior_block, swish
+from layers import HSI_prior_block, swish
 
 
 class Dense_HSI_prior_Network(torch.nn.Module):
@@ -24,7 +24,7 @@ class Dense_HSI_prior_Network(torch.nn.Module):
         self.residual_block = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
         self.hsi_block = torch.nn.ModuleList([HSI_prior_block(output_ch, output_ch, feature=feature, activation=activation) for _ in range(block_num)])
         if self.split_num == 1:
-            self.split_conv = torch.nn.ModuleList([torch.nn.Conv2d(output_ch * self.split_num, output_ch, 1, 1, 0) for _ in range(self.block_num)])
+            self.split_conv = torch.nn.ModuleList([torch.nn.Identity() for _ in range(self.block_num)])
             self.output_conv = torch.nn.Conv2d(output_ch * self.block_num, output_ch, 1, 1, 0)
         else:
             split_conv = [torch.nn.Conv2d(output_ch * self.split_num, output_ch, 1, 1, 0) for _ in range(self.block_num // self.split_num)]
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     input_ch = 1
     output_ch = 31
     block_num = 5
-    split_num = 2
+    split_num = 1
     model = Dense_HSI_prior_Network(input_ch, output_ch,
                                     block_num=block_num, split_num=split_num)
     summary(model, (input_ch, 64, 64))
