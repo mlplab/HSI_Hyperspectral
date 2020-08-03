@@ -28,6 +28,29 @@ class Mish(torch.nn.Module):
         return mish(x)
 
 
+class SAMLoss(torch.nn.Module):
+
+    def forward(self, x, y):
+        x_sqrt = torch.norm(x, dim=1)
+        y_sqrt = torch.norm(y, dim=1)
+        xy = torch.sum(x * y, dim=1)
+        metrics = xy / (x_sqrt * y_sqrt + 1e-6)
+        angle = torch.acos(metrics)
+        return torch.mean(angle)
+
+
+class MSE_SAMLoss(torch.nn.Module):
+
+    def __init__(self, alpha=.5):
+        super(MSE_SAMLoss, self).__init__()
+        self.alpha = alpha
+        self.mse_loss = torch.nn.MSELoss()
+        self.sam_loss = SAMLoss()
+
+    def forward(self, x, y):
+        return self.alpha * self.mse_loss(x, y) + (1 - self.alpha) * self.sam_loss(x, y)
+
+
 class Conv_Block(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, kernel_size, stride, padding, norm=True):
