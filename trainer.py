@@ -75,6 +75,7 @@ class Trainer(object):
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
+            show_mean = np.insert(show_mean, 0, show_loss)
             self.train_output.append(show_mean)
             mode = 'Val'
             self.model.eval()
@@ -91,6 +92,7 @@ class Trainer(object):
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
+            show_mean = np.insert(show_mean, 0, show_loss)
             self.val_output.append(show_mean)
             if self.callbacks:
                 for callback in self.callbacks:

@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import HSI_prior_block, swish
+from .layers import HSI_prior_block, swish
 
 
 class Dense_HSI_prior_Network(torch.nn.Module):
