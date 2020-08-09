@@ -8,6 +8,7 @@ from tqdm import tqdm_notebook
 from datetime import datetime
 from collections import OrderedDict
 import torch
+from apex import amp, optimizer
 # from utils import psnr
 from evaluate import PSNRMetrics, SAMMetrics
 from pytorch_ssim import SSIM
@@ -129,17 +130,33 @@ class Trainer(object):
         return x
 
 
-class Deeper_Trainer(Trainer):
+class Apex_Trainer(Trainer):
+
+    def __init__(self, model, criterion, optimizer, scheduler=None, callbacks=None, **kwargs):
+
+        opt_level = 'O1'
+        self.model, self.optimizer = amp.initialize(model, optimizer, opt_level=opt_level)
+        self.criterion = criterion
+        # self.model = model
+        # self.optimizer = optimizer
+        self.scheduler = scheduler
+        self.callbacks = callbacks
+        self.psnr = PSNRMetrics().eval()
+        self.sam = SAMMetrics().eval()
+        self.ssim = SSIM().eval()
+        shape = kwargs.get('shape')
+        if shape is None:
+            shape = (64, 31, 48, 48)
+        self.zeros = torch.zeros(shape).to(device)
+        self.ones = torch.ones(shape).to(device)
 
     def _step(self, inputs, labels, train=True):
         if train is True:
             self.optimizer.zero_grad()
-        output_6, output_12, output = self.model(inputs)
-        labels_6 = labels[:, ::4]
-        labels_12 = labels[:, ::2]
-        loss = .1 * self.criterion(output_6, labels_6) + .1 * self.criterion(output_12, labels_12) + self.criterion(output, labels)
+        output = self.model(inputs)
+        loss = self.criterion(output, labels)
         if train is True:
-            loss.backward()
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss
+            scaled_loss.backward()
             self.optimizer.step()
-        show_loss = torch.nn.functional.mse_loss(output, labels)
-        return show_loss
+        return loss, output
