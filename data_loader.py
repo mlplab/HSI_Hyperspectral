@@ -90,6 +90,29 @@ class PatchMaskDataset(torch.utils.data.Dataset):
         return self.data_len
 
 
+class Apex_PatchMaskDataset(PatchMaskDataset):
+
+    def __getitem__(self, idx):
+        patch_id = self.data[idx].split('.')[0].split('_')[-1]
+        mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))[self.data_key]
+        nd_data = np.array(mat_data, dtype=np.float32).copy()
+        if self.transforms is not None:
+            for transform in self.transforms:
+                nd_data = transform(nd_data)
+        else:
+            nd_data = torchvision.transforms.ToTensor()(nd_data)
+        trans_data = nd_data
+        label_data = trans_data
+        mask = sio.loadmat(os.path.join(self.mask_path, f'mask_{patch_id}.mat'))[self.data_key]
+        mask = self.mask_transforms(mask)
+        measurement_data = (trans_data * mask).sum(dim=0, keepdim=True)
+        if self.concat is True:
+            input_data = torch.cat([measurement_data, mask], dim=0)
+        else:
+            input_data = measurement_data
+        return input_data.half(), label_data.half()
+
+
 class PatchEvalDataset(PatchMaskDataset):
 
     def __getitem__(self, idx):
@@ -111,3 +134,26 @@ class PatchEvalDataset(PatchMaskDataset):
         else:
             input_data = measurement_data
         return self.data[idx], input_data, label_data
+
+
+class Apex_PatchEvalDataset(PatchEvalDataset):
+
+    def __getitem__(self, idx):
+        patch_id = self.data[idx].split('.')[0].split('_')[-1]
+        mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))[self.data_key]
+        nd_data = np.array(mat_data, dtype=np.float32).copy()
+        if self.transforms is not None:
+            for transform in self.transforms:
+                nd_data = transform(nd_data)
+        else:
+            nd_data = torchvision.transforms.ToTensor()(nd_data)
+        trans_data = nd_data
+        label_data = trans_data
+        mask = sio.loadmat(os.path.join(self.mask_path, f'mask_{patch_id}.mat'))[self.data_key]
+        mask = self.mask_transforms(mask)
+        measurement_data = (trans_data * mask).sum(dim=0, keepdim=True)
+        if self.concat is True:
+            input_data = torch.cat([measurement_data, mask], dim=0)
+        else:
+            input_data = measurement_data
+        return self.data[idx], input_data.half(), label_data.half()

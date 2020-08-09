@@ -147,16 +147,23 @@ class Apex_Trainer(Trainer):
         shape = kwargs.get('shape')
         if shape is None:
             shape = (64, 31, 48, 48)
-        self.zeros = torch.zeros(shape).to(device)
-        self.ones = torch.ones(shape).to(device)
+        self.zeros = torch.zeros(shape).half().to(device)
+        self.ones = torch.ones(shape).half().to(device)
+
+    def _evaluate(self, output, label):
+        output = self._cut(output)
+        # label = label.half()
+        labels = self._cut(label)
+        return [self.psnr(labels, output).item(), self.ssim(labels, output).item(), self.sam(labels, output).item()]
 
     def _step(self, inputs, labels, train=True):
         if train is True:
             self.optimizer.zero_grad()
         output = self.model(inputs)
+        # labels = labels.half()
         loss = self.criterion(output, labels)
         if train is True:
-            with amp.scale_loss(loss, self.optimizer) as scaled_loss
-            scaled_loss.backward()
+            with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                scaled_loss.backward()
             self.optimizer.step()
         return loss, output
