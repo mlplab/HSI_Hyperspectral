@@ -8,7 +8,7 @@ from tqdm import tqdm_notebook
 from datetime import datetime
 from collections import OrderedDict
 import torch
-from apex import amp, optimizer
+from apex import amp, optimizers
 # from utils import psnr
 from evaluate import PSNRMetrics, SAMMetrics
 from pytorch_ssim import SSIM

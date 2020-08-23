@@ -110,7 +110,7 @@ class Apex_PatchMaskDataset(PatchMaskDataset):
             input_data = torch.cat([measurement_data, mask], dim=0)
         else:
             input_data = measurement_data
-        return input_data.half(), label_data.half()
+        return input_data, label_data.half()
 
 
 class PatchEvalDataset(PatchMaskDataset):
@@ -156,4 +156,4 @@ class Apex_PatchEvalDataset(PatchEvalDataset):
             input_data = torch.cat([measurement_data, mask], dim=0)
         else:
             input_data = measurement_data
-        return self.data[idx], input_data.half(), label_data.half()
+        return self.data[idx], input_data, label_data.half()
