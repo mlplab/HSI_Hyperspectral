@@ -1,6 +1,8 @@
 # coding: utf-8
 
 
+import math
+import numpy as np
 import torch
 
 
@@ -295,3 +297,64 @@ class Attention_HSI_prior_block(torch.nn.Module):
         if self.mode is not None:
             x = self.spectral_attention(x)
         return x
+
+
+class Ghost_layer(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, *args, kernel_size=1, stride=1, dw_kernel=3, dw_stride=1, ratio=2, **kwargs):
+        super(Ghost_layer, self).__init__()
+        self.output_ch = output_ch
+        primary_ch = math.ceil(output_ch / ratio)
+        new_ch = output_ch * (ratio - 1)
+        self.activation = kwargs.get('activation')
+        self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
+        self.cheep_conv = torch.nn.Conv2d(primary_ch, new_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
+
+    def _activation_fn(self, x):
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return torch.nn.functional.leaky_relu(x)
+        elif self.activation == 'relu':
+            return torch.relu(x)
+        else:
+            return x
+
+    def forward(self, x):
+        primary_x = self._activation_fn(self.primary_conv(x))
+        new_x = self._activation_fn(self.cheep_conv(primary_x))
+        output = torch.cat([primary_x, new_x], dim=1)
+        return output[:, :self.output_ch, :, :]
+
+
+class Ghost_Bottleneck(torch.nn.Module):
+
+    def __init__(self, input_ch, hidden_ch, output_ch, *args, kernel_size=1, stride=1, se_flag=True, **kwargs):
+        super(Ghost_Bottleneck, self).__init__()
+
+        activation = kwargs.get('activation')
+        dw_kernel = kwargs.get('dw_kernel')
+        dw_stride = kwargs.get('dw_stride')
+        ratio = kwargs.get('ratio')
+
+        Ghost_layer1 = Ghost_layer(input_ch, hidden_ch, kernel_size=1, activation=activation)
+        depth = torch.nn.Conv2d(hidden_ch, hidden_ch, kernel_size, stride, groups=hidden_ch) if stride == 2 else torch.nn.Sequential()
+        se_block = SE_block(hidden_ch, hidden_ch, ratio=8) if se_flag is True else torch.nn.Sequential()
+        Ghost_layer2 = Ghost_layer(hidden_ch, output_ch, kernel_size=kernel_size, activation=None)
+        self.ghost_layer = torch.nn.Sequential(Ghost_layer1, depth, se_block, Ghost_layer2)
+
+        if stride == 1 and input_ch == output_ch:
+            self.shortcut = torch.nn.Sequential()
+        else:
+            self.shortcut = torch.nn.Sequential(
+                    torch.nn.Conv2d(input_ch, input_ch, kernel_size, stride=1, padding=kernel_size // 2, groups=input_ch),
+                    torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
+            )
+
+    def forward(self, x):
+        h = self.shortcut(x)
+        x = self.ghost_layer(x)
+        return x + h
+
