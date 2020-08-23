@@ -342,7 +342,7 @@ class Ghost_Bottleneck(torch.nn.Module):
         Ghost_layer1 = Ghost_layer(input_ch, hidden_ch, kernel_size=1, activation=activation)
         depth = torch.nn.Conv2d(hidden_ch, hidden_ch, kernel_size, stride, groups=hidden_ch) if stride == 2 else torch.nn.Sequential()
         se_block = SE_block(hidden_ch, hidden_ch, ratio=8) if se_flag is True else torch.nn.Sequential()
-        Ghost_layer2 = Ghost_layer(hidden_ch, output_ch, kernel_size=kernel_size, activation=None)
+        Ghost_layer2 = Ghost_layer(hidden_ch, output_ch, kernel_size=kernel_size, activation=activation)
         self.ghost_layer = torch.nn.Sequential(Ghost_layer1, depth, se_block, Ghost_layer2)
 
         if stride == 1 and input_ch == output_ch:
@@ -357,4 +357,3 @@ class Ghost_Bottleneck(torch.nn.Module):
         h = self.shortcut(x)
         x = self.ghost_layer(x)
         return x + h
-

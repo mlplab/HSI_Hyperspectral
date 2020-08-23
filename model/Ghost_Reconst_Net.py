@@ -17,15 +17,16 @@ class Ghost_Reconst_Net(torch.nn.Module):
         else:
             ghost_output = output_ch
 
-        self.start_conv = torch.nn.Conv2d(input_ch, ghost_output, 3, 1, 1)
+        self.start_conv = torch.nn.Conv2d(input_cht, output_ch, 3, 1, 1)
+        self.ghost_conv = torch.nn.Conv2d(output_ch, ghost_output, 3, 1, 1)
         self.ghost_layers = torch.nn.ModuleList([Ghost_Bottleneck(ghost_output, feature_num, ghost_output, stride=1, activation=activation) for _ in range(layer_num)])
         self.spectral_layers = torch.nn.ModuleList([torch.nn.Conv2d(ghost_output, ghost_output, 1, 1, 0) for _ in range(layer_num)])
         self.share_conv = torch.nn.Conv2d(ghost_output, ghost_output, 3, 1, 1)
         self.output_conv = torch.nn.Conv2d(ghost_output, output_ch, 1, 1, 0)
 
     def forward(self, x):
-        x = self.start_conv(x)
-        h = x
+        h = self.start_conv(x)
+        x = self.ghost_conv(h)
         for ghost_layer, spectral_layer in zip(self.ghost_layers, self.spectral_layers):
             x_shortcut = x
             x = ghost_layer(x)
