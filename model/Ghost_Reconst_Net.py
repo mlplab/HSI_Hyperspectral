@@ -17,7 +17,7 @@ class Ghost_Reconst_Net(torch.nn.Module):
         else:
             ghost_output = output_ch
 
-        self.start_conv = torch.nn.Conv2d(input_cht, output_ch, 3, 1, 1)
+        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         self.ghost_conv = torch.nn.Conv2d(output_ch, ghost_output, 3, 1, 1)
         self.ghost_layers = torch.nn.ModuleList([Ghost_Bottleneck(ghost_output, feature_num, ghost_output, stride=1, activation=activation) for _ in range(layer_num)])
         self.spectral_layers = torch.nn.ModuleList([torch.nn.Conv2d(ghost_output, ghost_output, 1, 1, 0) for _ in range(layer_num)])
