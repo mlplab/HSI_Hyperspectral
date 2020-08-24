@@ -1,7 +1,14 @@
 # coding: utf-8
 
 
+import numpy as np
 import torch
+
+
+def split_layer(output_ch, chunks):
+    split = [np.int(np.ceil(output_ch / chunks)) for _ in range(chunks)]
+    split[chunks - 1] += output_ch - sum(split)
+    return split
 
 
 def swish(x):
@@ -295,3 +302,68 @@ class Attention_HSI_prior_block(torch.nn.Module):
         if self.mode is not None:
             x = self.spectral_attention(x)
         return x
+
+
+class GroupConv(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, chunks, kernel_size, stride=1, **kwargs):
+        super(GroupConv, self).__init__()
+        self.chunks = chunks
+        self.split_input_ch = split_layer(input_ch, chunks)
+        self.split_output_ch = split_layer(output_ch, chunks)
+
+        if chunks == 1:
+            self.group_conv = torch.nn.Conv2d(input_ch, output_ch, kernel_size, stride=stride, padding=kernel_size // 2)
+        else:
+            self.group_layers = torch.nn.ModuleList([torch.nn.Conv2d(self.split_input_ch[idx], self.split_output_ch[idx], kernel_size, stride=stride, padding=kernel_size // 2) for idx in range(chunks)])
+
+    def forward(self, x):
+        if self.chunks == 1:
+            return self.group_conv(x)
+        else:
+            split = torch.chunk(x, self.chunks, dim=1)
+            return torch.cat([group_layer(split_x) for group_layer, split_x in zip(self.group_layers, split)], dim=1)
+
+
+class Mix_Conv(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, chunks, stride=1):
+        super(Mix_Conv, self).__init__()
+
+        self.chunks = chunks
+        self.split_layer = split_layer(output_ch, chunks)
+        self.conv_layers = torch.nn.ModuleList([torch.nn.Conv2d(self.split_layer[idx], self.split_layer[idx], kernel_size=2 * idx + 3, stride=stride, padding=(2 * idx + 3) // 2, groups=self.split_layer[idx]) for idx in range(chunks)])
+
+    def forward(self, x):
+        split = torch.chunk(x, self.chunks, dim=1)
+        output = torch.cat([conv_layer(split_x) for conv_layer, split_x in zip(self.conv_layers, split)], dim=1)
+        return output
+
+
+class Mix_SS_Layer(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, chunks, *args, stride=1, feature_num=64, group_num=4, **kwargs):
+        super(Mix_SS_Layer, self).__init__()
+        self.activation = kwargs.get('activation')
+        # self.spatial_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
+        self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
+        self.mix_conv = Mix_Conv(feature_num, feature_num, chunks)
+        self.spectral_conv = GroupConv(feature_num, output_ch, group_num, kernel_size=1, stride=1)
+        # self.mix_ss = torch.nn.Sequential(spatial_conv, mix_conv, spectral_conv)
+        self.shortcut = torch.nn.Sequential()
+        
+    def _activation_fn(self, x):
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return torch.nn.functional.leaky_relu(x)
+        else:
+            return torch.relu(x)
+
+    def forward(self, x):
+        h = self._activation_fn(self.spatial_conv(x))
+        h = self._activation_fn(self.mix_conv(h))
+        h = self.spectral_conv(h)
+        return h + self.shortcut(x)
