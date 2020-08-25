@@ -1,10 +1,6 @@
 # coding: utf-8
 
 
-<<<<<<< HEAD
-=======
-import math
->>>>>>> 61e71b107d0898998826762cc4c16efa40fb733e
 import numpy as np
 import torch
 
