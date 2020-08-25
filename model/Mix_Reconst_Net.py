@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import Mix_Conv, Mix_SS_Layer
+from .layers import Mix_Conv, Mix_SS_Layer
 
 
 class Mix_Reconst_Net(torch.nn.Module):
@@ -19,7 +19,7 @@ class Mix_Reconst_Net(torch.nn.Module):
     def forward(self, x):
         x = self.start_conv(x)
         for mix_ss_layer in self.mix_ss_layers:
-            x = x + mix_ss_layer(x)
+            x = mix_ss_layer(x)
         return self.output_conv(x)
 
 
