@@ -349,7 +349,7 @@ class Mix_SS_Layer(torch.nn.Module):
         # self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
         self.mix_conv = Mix_Conv(feature_num, feature_num, chunks)
         # self.spectral_conv = GroupConv(feature_num, output_ch, group_num, kernel_size=1, stride=1)
-        self.spectral = torch.nn.Conv2d(feature_num, output_ch, 1, 1, 0)
+        self.spectral_conv = torch.nn.Conv2d(feature_num, output_ch, 1, 1, 0)
         # self.mix_ss = torch.nn.Sequential(spatial_conv, mix_conv, spectral_conv)
         self.shortcut = torch.nn.Sequential()
 
