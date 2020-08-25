@@ -309,7 +309,7 @@ class Ghost_layer(torch.nn.Module):
     def __init__(self, input_ch, output_ch, *args, kernel_size=1, stride=1, dw_kernel=3, dw_stride=1, ratio=2, **kwargs):
         super(Ghost_layer, self).__init__()
         self.output_ch = output_ch
-        primary_ch = math.ceil(output_ch / ratio)
+        primary_ch = int(np.ceil(output_ch / ratio))
         new_ch = output_ch * (ratio - 1)
         self.activation = kwargs.get('activation')
         self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
