@@ -11,11 +11,16 @@ class Mix_Reconst_Net(torch.nn.Module):
     def __init__(self, input_ch, output_ch, chunks, *args, block_num=9, feature_num=64, **kwargs):
         super(Mix_Reconst_Net, self).__init__()
 
-        self.activation = kwargs.get('activation')
+        activation = kwargs.get('activation')
+        group_num = kwargs.get('group_num')
+        se_flag = kwargs.get('se_flag')
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
         self.mix_ss_layers = torch.nn.ModuleList([Mix_SS_Layer(output_ch,
                                                                output_ch, chunks,
-                                                               feature_num=feature_num) for _ in range(block_num)])
+                                                               feature_num=feature_num,
+                                                               group_num=group_num,
+                                                               activation=activation,
+                                                               se_flag=se_flag) for _ in range(block_num)])
         self.output_conv = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
     def forward(self, x):
