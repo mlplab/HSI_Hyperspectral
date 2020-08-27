@@ -12,8 +12,15 @@ def mish(x):
     return x * torch.tanh(torch.nn.functional.softplus(x))
 
 
-# def leaky_relu(x, gamma=.2):
-#     return x if x >= 0 else -gamma * x
+class FReLU(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, kernel_size, stride=1, **kwargs):
+        super(FReLU, self).__init__()
+        self.depth = torch.nn.Conv2d(input_ch, output_ch, kernel_size, stride=stride, padding=kernel_size // 2)
+
+    def forward(self, x):
+        depth = self.depth(x)
+        return torch.max(x, depth)
 
 
 class Swish(torch.nn.Module):
@@ -26,6 +33,39 @@ class Mish(torch.nn.Module):
 
     def forward(self, x):
         return mish(x)
+
+
+class Base_Module(torch.nn.Module):
+
+    def __init__(self):
+        super(Base_Module, self).__init__()
+        # self.activation = 
+        # if self.activation == 'swish':
+        #     self._activation_fn = Swish()
+        # elif self.activation == 'mish':
+        #     self._activation_fn = Mish()
+        # elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+        #     self._activation_fn = torch.nn.LeakyReLU()
+        # elif self.activation == 'frelu':
+        #     self._activation_fn = FReLU(frelu_input_ch, frelu_output_ch)
+        # elif self.activation == 'relu':
+        #     self._activation_fn = torch.nn.ReLU()
+        # else:
+        #     self.activation = torch.nn.Sequential()
+
+    def _activation_fn(self, x):
+        if self.activation == 'swish':
+            return swish(x)
+        elif self.activation == 'mish':
+            return mish(x)
+        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
+            return torch.nn.functional.leaky_relu(x)
+        # elif self.activation == 'frelu':
+        #     return FReLU(x)
+        elif self.activation == 'relu':
+            return torch.relu(x)
+        else:
+            return x
 
 
 class Conv_Block(torch.nn.Module):
@@ -95,23 +135,13 @@ class SA_Block(torch.nn.Module):
         return x + self.sigma_ratio * attn_g
 
 
-class DW_PT_Conv(torch.nn.Module):
+class DW_PT_Conv(Base_Module):
 
     def __init__(self, input_ch, output_ch, kernel_size, activation='relu'):
         super(DW_PT_Conv, self).__init__()
         self.activation = activation
         self.depth = torch.nn.Conv2d(input_ch, input_ch, kernel_size, 1, 1, groups=input_ch)
         self.point = torch.nn.Conv2d(input_ch, output_ch, 1, 1, 0)
-
-    def _activation_fn(self, x):
-        if self.activation == 'relu':
-            return torch.relu(x)
-        elif self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        else:
-            return x
 
     def forward(self, x):
         x = self.depth(x)
@@ -121,7 +151,7 @@ class DW_PT_Conv(torch.nn.Module):
         return x
 
 
-class HSI_prior_block(torch.nn.Module):
+class HSI_prior_block(Base_Module):
 
     def __init__(self, input_ch, output_ch, feature=64, activation='relu'):
         super(HSI_prior_block, self).__init__()
@@ -130,16 +160,6 @@ class HSI_prior_block(torch.nn.Module):
         self.spatial_2 = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
         self.spectral = torch.nn.Conv2d(output_ch, input_ch, 1, 1, 0)
 
-    def _activation_fn(self, x):
-        if self.activation == 'relu':
-            return torch.relu(x)
-        elif self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        else:
-            return x
-
     def forward(self, x):
         x_in = x
         h = self.spatial_1(x)
@@ -150,7 +170,7 @@ class HSI_prior_block(torch.nn.Module):
         return x
 
 
-class My_HSI_network(torch.nn.Module):
+class My_HSI_network(Base_Module):
 
     def __init__(self, input_ch, output_ch, feature=64, activation='relu'):
         super(My_HSI_network, self).__init__()
@@ -159,16 +179,6 @@ class My_HSI_network(torch.nn.Module):
         self.spatial_2 = DW_PT_Conv(feature, output_ch, 3, activation=None)
         self.spectral = torch.nn.Conv2d(output_ch, output_ch, 1, 1, 0)
 
-    def _activation_fn(self, x):
-        if self.activation == 'relu':
-            return torch.relu(x)
-        elif self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        else:
-            return x
-
     def forward(self, x):
         x_in = x
         h = self.spatial_1(x)
@@ -179,7 +189,7 @@ class My_HSI_network(torch.nn.Module):
         return x
 
 
-class RAM(torch.nn.Module):
+class RAM(Base_Module):
 
     def __init__(self, input_ch, output_ch, ratio=None, **kwargs):
         super(RAM, self).__init__()
@@ -193,18 +203,6 @@ class RAM(torch.nn.Module):
         self.spectral_pooling = GVP()
         self.spectral_Linear = torch.nn.Linear(input_ch, input_ch // self.ratio)
         self.spectral_attn = torch.nn.Linear(input_ch // self.ratio, output_ch)
-
-    def _activation_fn(self, x):
-        if self.activation == 'relu':
-            return torch.relu(x)
-        if self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return torch.nn.functional.leaky_relu(x)
-        else:
-            return x
 
     def forward(self, x):
         batch_size, ch, h, w = x.size()
@@ -258,7 +256,7 @@ class SE_block(torch.nn.Module):
         return x * attn.unsqueeze(-1).unsqueeze(-1)
 
 
-class Attention_HSI_prior_block(torch.nn.Module):
+class Attention_HSI_prior_block(Base_Module):
 
     def __init__(self, input_ch, output_ch, feature=64, **kwargs):
         super(Attention_HSI_prior_block, self).__init__()
@@ -274,16 +272,6 @@ class Attention_HSI_prior_block(torch.nn.Module):
         if self.mode is not None:
             self.spectral_attention = SE_block(output_ch, output_ch, mode=self.mode, ratio=ratio)
         self.activation = kwargs.get('activation')
-
-    def _activation_fn(self, x):
-        if self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return torch.nn.functional.leaky_relu(x)
-        else:
-            return torch.relu(x)
 
     def forward(self, x):
         x_in = x
