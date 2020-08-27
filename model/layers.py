@@ -307,7 +307,7 @@ class Attention_HSI_prior_block(torch.nn.Module):
 
 class GroupConv(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, chunks, kernel_size, stride=1, **kwargs):
+    def __init__(self, input_ch, output_ch, chunks, kernel_size, *args, stride=1, **kwargs):
         super(GroupConv, self).__init__()
         self.chunks = chunks
         self.split_input_ch = split_layer(input_ch, chunks)
@@ -331,7 +331,7 @@ class GroupConv(torch.nn.Module):
 
 class Mix_Conv(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, chunks, stride=1):
+    def __init__(self, input_ch, output_ch, chunks, stride=1, **kwargs):
         super(Mix_Conv, self).__init__()
 
         self.chunks = chunks
@@ -357,7 +357,7 @@ class Group_SE(torch.nn.Module):
         else:
             ratio = 2
         self.activation = kwargs.get('activation')
-        feature_num = max(1, outuptu_ch // ratio)
+        feature_num = max(1, output_ch // ratio)
         self.squeeze = GroupConv(input_ch, feature_num, chunks, kernel_size, 1, 0)
         self.extention = GroupConv(feature_num, output_ch, chunks, kernel_size, 1, 0)
 
@@ -385,8 +385,7 @@ class Mix_SS_Layer(torch.nn.Module):
         self.activation = kwargs.get('activation')
         se_flag = kwargs.get('se_flag')
         # self.spatial_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
-        # self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
-        self.spatial_conv = Mix_Conv(input_ch, feature_num, chunks, kernel_size=3, stride=1)
+        self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
         self.mix_conv = Mix_Conv(feature_num, feature_num, chunks)
         if se_flag:
             self.se_block = Group_SE(feature_num, feature_num, chunks, kernel_size=1)
