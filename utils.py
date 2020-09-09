@@ -2,6 +2,7 @@
 
 
 import os
+import h5py
 import shutil
 import scipy.io
 from skimage.transform import rotate
@@ -41,7 +42,7 @@ def make_patch(data_path, save_path, size=256, step=256, ch=24, data_key='data')
         f = scipy.io.loadmat(os.path.join(data_path, name))
         data = f[data_key]
         data = normalize(data)
-        data = np.expand_dims(np.asarray(data, np.float32).transpose([2, 0, 1]), axis=0)
+        data = np.expand_dims(np.array(data, np.float32).transpose([2, 0, 1]), axis=0)
         tensor_data = torch.as_tensor(data)
         patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
         patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
@@ -49,6 +50,34 @@ def make_patch(data_path, save_path, size=256, step=256, ch=24, data_key='data')
             save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
             save_name = os.path.join(save_path, f'{idx}_{i:05d}.mat')
             scipy.io.savemat(save_name, {'data': save_data})
+
+    return None
+
+
+def make_patch_h5py(data_path, save_path, size=256, step=256, ch=24, data_key='data'):
+
+    if os.path.exists(save_path):
+        shutil.rmtree(save_path)
+    os.mkdir(save_path)
+
+    data_list = os.listdir(data_path)
+    # data_list.sort()
+    for i, name in enumerate(tqdm(data_list, ascii=True)):
+        idx = name.split('.')[0]
+        # f = scipy.io.loadmat(os.path.join(data_path, name))
+        with h5py.File(os.path.join(data_path, name), 'r') as f:
+            data = np.array(f[data_key].value)
+            data = normalize(data)
+            data = np.expand_dims(np.array(data, np.float32).transpose([2, 0, 1]), axis=0)
+        tensor_data = torch.as_tensor(data)
+        patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
+        patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
+        for i in range(patch_data.size()[0]):
+            save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
+            save_name = os.path.join(save_path, f'{idx}_{i:05d}.h5')
+            # scipy.io.savemat(save_name, {'data': save_data})
+            with h5py.File(save_name, 'w') as f:
+                f.create_dataset('data', data=save_data)
 
     return None
 
