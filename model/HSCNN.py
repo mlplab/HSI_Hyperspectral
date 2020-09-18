@@ -15,9 +15,8 @@ class HSCNN(torch.nn.Module):
             self.activation = kwargs['activation']
         if 'output_norm' in kwargs:
             self.output_norm = kwargs['output_norm']
-        self.residual_shortcut = torch.nn.Identity()
-        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
-        self.patch_extraction = torch.nn.Conv2d(output_ch, 64, 3, 1, 1)
+        # self.residual_shortcut = torch.nn.Identity()
+        self.start_conv = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
         feature_map = [torch.nn.Conv2d(feature, feature, 3, 1, 1) for _ in range(layer_num - 1)]
         self.feature_map = torch.nn.Sequential(*feature_map)
         self.residual_conv = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
@@ -25,12 +24,51 @@ class HSCNN(torch.nn.Module):
     def forward(self, x):
 
         x = self.start_conv(x)
-        x_in = self.residual_shortcut(x)
-        x = self._activation_fn(self.patch_extraction(x))
+        # x_in = self.residual_shortcut(x)
+        x_in = x
         for feature_map in self.feature_map:
             x = self._activation_fn(feature_map(x))
-        output = self.residual_conv(x) + x_in
+        output = self.residual_conv(x + x_in)
         return output
+
+
+    def show_features(self, x, layer_num=0, output_layer=True, activation=True):
+
+        # initialize result
+        result = []
+        print(isinstance(layer_num, int))
+        if isinstance(layer_num, int):
+            layer_num = [layer_num]
+        j = 0
+        layer_num = set(layer_num)
+        print(layer_num, j)
+        # layer_num = [[True if i == num else False for num in layer_num] for i in range(len(self.feature_map))]
+        layer_nums = []
+        for i in range(1, len(self.feature_map) + 1):
+            flag = False
+            if i in layer_num:
+                flag = True
+            layer_nums.append(flag)
+        print(layer_nums)
+
+        # add start_conv
+        x = self.start_conv(x)
+        if layer_nums[0]:
+            result.append(x)
+        x_in = x
+
+        # add feature map
+        for i, feature_map in enumerate(self.feature_map):
+            x = feature_map(x)
+            if activation is True:
+                x = self._activation_fn(x)
+            if layer_nums[i]:
+                result.append(x)
+
+        output = self.residual_conv(x + x_in)
+        if output_layer:
+            result.append(output)
+        return result
 
 
     def _activation_fn(self, x):

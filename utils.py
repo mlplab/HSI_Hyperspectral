@@ -95,6 +95,38 @@ def make_icvl_data(img_dir, save_dir):
     return None
 
 
+def plot_features(results):
+
+    for i, result in enumerate(results):
+        # os.makedirs()
+        '''
+        result = result.permute(1, 0, 2, 3)
+        result = np.transpose(torchvision.utils.make_grid(result, nrow=8, padding=10, pad_value=255).detach().numpy(), (1, 2, 0))
+        print(result.shape)
+        plt.imshow(result, cmap='jet')
+        plt.axis('off')
+        plt.colorbar(cmap='jet')
+        plt.show()
+        '''
+        flag = False
+        print(result.shape)
+        result = result.squeeze().detach().numpy().transpose((1, 2, 0))
+        plt.figure(figsize=(16, 9))
+        for j in range(8):
+            for k in range(8):
+                if 8 * j + k == result.shape[-1]:
+                    flag = True
+                    break
+                plt.subplot(8, 8, 8 * j + k + 1)
+                plt.imshow(result[:, :, 8 * j + k])
+                plt.axis('off')
+            if flag is True:
+                break
+        print(result.shape[-1])
+        plt.tight_layout()
+        plt.savefig(f'HSCNN_{i:02d}')
+
+
 class RandomCrop(object):
 
     def __init__(self, size):
