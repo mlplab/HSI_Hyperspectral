@@ -12,3 +12,4 @@
 *ckpt*/
 # ignore output
 *output*/
+*.cpython*
