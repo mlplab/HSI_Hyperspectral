@@ -80,12 +80,12 @@ move_data(data_path, test_list, test_data_path)
 
 make_patch(train_data_path, train_patch_path, size=patch_size,step=patch_step, ch=31, data_key=data_key[data_name])
 make_patch(test_data_path, test_patch_path, size=patch_size, step=patch_step, ch=31, data_key=data_key[data_name])
-make_patch(test_data_path, eval_path, size=256, step=256, ch=31, data_key=data_key[data_name])
+make_patch(test_data_path, eval_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
 make_patch(test_data_path, eval_show_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
 
 
 patch_mask(os.path.join(save_path, 'mask.mat'), mask_path, size=patch_size, step=patch_step, ch=31)
-patch_mask(os.path.join(save_path, 'mask.mat'), eval_mask_path, size=256, step=256, ch=31)
+patch_mask(os.path.join(save_path, 'mask.mat'), eval_mask_path, size=show_size, step=show_step, ch=31)
 patch_mask(os.path.join(save_path, 'mask.mat'), mask_show_path, size=show_size, step=show_step, ch=31)
 
 
