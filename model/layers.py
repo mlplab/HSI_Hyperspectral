@@ -340,9 +340,9 @@ class Ghost_Bottleneck(torch.nn.Module):
         super(Ghost_Bottleneck, self).__init__()
 
         activation = kwargs.get('activation')
-        dw_kernel = kwargs.get('dw_kernel')
-        dw_stride = kwargs.get('dw_stride')
-        ratio = kwargs.get('ratio')
+        dw_kernel = kwargs.get('dw_kernel', 3)
+        dw_stride = kwargs.get('dw_stride', 1)
+        ratio = kwargs.get('ratio', 2)
 
         Ghost_layer1 = Ghost_layer(input_ch, hidden_ch, kernel_size=1, activation=activation)
         depth = torch.nn.Conv2d(hidden_ch, hidden_ch, kernel_size, stride, groups=hidden_ch) if stride == 2 else torch.nn.Sequential()
