@@ -30,7 +30,7 @@ class HSCNN(torch.nn.Module):
         x = self._activation_fn(self.patch_extraction(x))
         for feature_map in self.feature_map:
             x = self._activation_fn(feature_map(x))
-        output = self.residual_conv(x + x_in)
+        output = self.residual_conv(x) + x_in
         return output
 
 
