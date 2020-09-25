@@ -16,7 +16,8 @@ class HSCNN(torch.nn.Module):
         if 'output_norm' in kwargs:
             self.output_norm = kwargs['output_norm']
         # self.residual_shortcut = torch.nn.Identity()
-        self.start_conv = torch.nn.Conv2d(input_ch, feature, 3, 1, 1)
+        self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
+        self.patch_extraction = torch.nn.Conv2d(output_ch, feature, 3, 1, 1)
         feature_map = [torch.nn.Conv2d(feature, feature, 3, 1, 1) for _ in range(layer_num - 1)]
         self.feature_map = torch.nn.Sequential(*feature_map)
         self.residual_conv = torch.nn.Conv2d(feature, output_ch, 3, 1, 1)
@@ -26,6 +27,7 @@ class HSCNN(torch.nn.Module):
         x = self.start_conv(x)
         # x_in = self.residual_shortcut(x)
         x_in = x
+        x = self._activation_fn(self.patch_extraction(x))
         for feature_map in self.feature_map:
             x = self._activation_fn(feature_map(x))
         output = self.residual_conv(x + x_in)
