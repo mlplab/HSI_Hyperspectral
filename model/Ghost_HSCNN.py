@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from layers import Ghost_layer, Ghost_Bottleneck, swish, mish
+from .layers import Ghost_layer, Ghost_Bottleneck, swish, mish
 
 
 class Ghost_HSCNN(torch.nn.Module):
