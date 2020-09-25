@@ -44,11 +44,12 @@ class HSCNN(torch.nn.Module):
         print(layer_num, j)
         # layer_num = [[True if i == num else False for num in layer_num] for i in range(len(self.feature_map))]
         layer_nums = []
-        for i in range(1, len(self.feature_map) + 1):
-            flag = False
-            if i in layer_num:
-                flag = True
-            layer_nums.append(flag)
+        layer_nums = [True if i in layer_num else False for i in range(1, len(self.feature_map) + 1)]
+        # for i in range(1, len(self.feature_map) + 1):
+        #     flag = False
+        #     if i in layer_num:
+        #         flag = True
+        #     layer_nums.append(flag)
         print(layer_nums)
 
         # add start_conv
