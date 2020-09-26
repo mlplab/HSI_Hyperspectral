@@ -37,6 +37,36 @@ class Ghost_HSCNN(torch.nn.Module):
         output = self.output_conv(x + x_in)
         return output
 
+    def show_features(self, x, layer_num=0, output_layer=True, activation=True):
+
+        # initialize result
+        result = []
+        if isinstance(layer_num, int):
+            layer_num = [layer_num]
+        j = 0
+        layer_num = set(layer_num)
+        layer_nums = []
+        layer_nums = [True if i in layer_num else False for i in range(1, len(self.ghost_layers) + 1)]
+
+        # add start_conv
+        x = self.start_conv(x)
+        if layer_nums[0]:
+            result.append(x)
+        x_in = x
+
+        # add feature map
+        for i, feature_map in enumerate(self.ghost_layers):
+            x = feature_map(x)
+            # if activation is True:
+            x = self._activation_fn(x)
+            if layer_nums[i]:
+                result.append(x)
+
+        output = self.output_conv(x + x_in)
+        if output_layer:
+            result.append(output)
+        return result
+
 
 class Ghost_HSCNN_Bneck(torch.nn.Module):
 
@@ -67,14 +97,17 @@ class Ghost_HSCNN_Bneck(torch.nn.Module):
         x_in = x
         for ghost_layer in self.ghost_layers:
             x = self._activation_fn(ghost_layer(x))
-        output = self.output_conv(x + x_in)
+        output = self.output_conv(x)
         return output
 
 
 
 if __name__ == '__main__':
 
-    model = Ghost_HSCNN_Bneck(1, 31, ratio=2)
-    summary(model, (1, 64, 64))
+    x = torch.rand((1, 1, 64, 64))
+    # model = Ghost_HSCNN_Bneck(1, 31, ratio=2)
+    # summary(model, (1, 64, 64))
     model = Ghost_HSCNN(1, 31)
     summary(model, (1, 64, 64))
+    result = model.show_features(x, layer_num=[0] + list(range(1, 9 + 1)), output_layer=True)
+    print(result[0].shape)

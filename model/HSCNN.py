@@ -33,26 +33,16 @@ class HSCNN(torch.nn.Module):
         output = self.residual_conv(x) + x_in
         return output
 
-
     def show_features(self, x, layer_num=0, output_layer=True, activation=True):
 
         # initialize result
         result = []
-        print(isinstance(layer_num, int))
         if isinstance(layer_num, int):
             layer_num = [layer_num]
         j = 0
         layer_num = set(layer_num)
-        print(layer_num, j)
-        # layer_num = [[True if i == num else False for num in layer_num] for i in range(len(self.feature_map))]
         layer_nums = []
         layer_nums = [True if i in layer_num else False for i in range(1, len(self.feature_map) + 1)]
-        # for i in range(1, len(self.feature_map) + 1):
-        #     flag = False
-        #     if i in layer_num:
-        #         flag = True
-        #     layer_nums.append(flag)
-        print(layer_nums)
 
         # add start_conv
         x = self.start_conv(x)
@@ -63,8 +53,8 @@ class HSCNN(torch.nn.Module):
         # add feature map
         for i, feature_map in enumerate(self.feature_map):
             x = feature_map(x)
-            if activation is True:
-                x = self._activation_fn(x)
+            # if activation is True:
+            x = self._activation_fn(x)
             if layer_nums[i]:
                 result.append(x)
 
@@ -72,7 +62,6 @@ class HSCNN(torch.nn.Module):
         if output_layer:
             result.append(output)
         return result
-
 
     def _activation_fn(self, x):
         if self.activation == 'relu':
