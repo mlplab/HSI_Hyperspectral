@@ -43,10 +43,9 @@ class Ghost_HSCNN(torch.nn.Module):
         result = []
         if isinstance(layer_num, int):
             layer_num = [layer_num]
-        j = 0
         layer_num = set(layer_num)
         layer_nums = []
-        layer_nums = [True if i in layer_num else False for i in range(1, len(self.ghost_layers) + 1)]
+        layer_nums = [True if i in layer_num else False for i in range(len(self.ghost_layers))]
 
         # add start_conv
         x = self.start_conv(x)
@@ -109,5 +108,5 @@ if __name__ == '__main__':
     # summary(model, (1, 64, 64))
     model = Ghost_HSCNN(1, 31)
     summary(model, (1, 64, 64))
-    result = model.show_features(x, layer_num=[0] + list(range(1, 9 + 1)), output_layer=True)
+    result = model.show_features(x, layer_num=list(range(1, 9 + 1)), output_layer=True)
     print(result[0].shape)
