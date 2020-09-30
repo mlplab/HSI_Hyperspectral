@@ -42,12 +42,11 @@ class Mish(torch.nn.Module):
         return mish(x)
 
 
-<<<<<<< HEAD
 class Base_Module(torch.nn.Module):
 
     def __init__(self):
         super(Base_Module, self).__init__()
-        # self.activation = 
+        # self.activation =
         # if self.activation == 'swish':
         #     self._activation_fn = Swish()
         # elif self.activation == 'mish':
@@ -74,7 +73,6 @@ class Base_Module(torch.nn.Module):
             return torch.relu(x)
         else:
             return x
-=======
 class SAMLoss(torch.nn.Module):
 
     def forward(self, x, y):
@@ -99,7 +97,6 @@ class MSE_SAMLoss(torch.nn.Module):
 
     def forward(self, x, y):
         return self.alpha * self.mse_ratio * self.mse_loss(x, y) + self.beta * self.sam_ratio * self.sam_loss(x, y)
->>>>>>> mse_sam
 
 
 class Conv_Block(torch.nn.Module):
