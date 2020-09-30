@@ -42,6 +42,7 @@ class Mish(torch.nn.Module):
         return mish(x)
 
 
+<<<<<<< HEAD
 class Base_Module(torch.nn.Module):
 
     def __init__(self):
@@ -73,6 +74,32 @@ class Base_Module(torch.nn.Module):
             return torch.relu(x)
         else:
             return x
+=======
+class SAMLoss(torch.nn.Module):
+
+    def forward(self, x, y):
+        x_sqrt = torch.norm(x, dim=1)
+        y_sqrt = torch.norm(y, dim=1)
+        xy = torch.sum(x * y, dim=1)
+        metrics = xy / (x_sqrt * y_sqrt + 1e-6)
+        angle = torch.acos(metrics)
+        return torch.mean(angle)
+
+
+class MSE_SAMLoss(torch.nn.Module):
+
+    def __init__(self, alpha=.5, beta=.5, mse_ratio=1., sam_ratio=.01):
+        super(MSE_SAMLoss, self).__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.mse_loss = torch.nn.MSELoss()
+        self.sam_loss = SAMLoss()
+        self.mse_ratio = mse_ratio
+        self.sam_ratio = sam_ratio
+
+    def forward(self, x, y):
+        return self.alpha * self.mse_ratio * self.mse_loss(x, y) + self.beta * self.sam_ratio * self.sam_loss(x, y)
+>>>>>>> mse_sam
 
 
 class Conv_Block(torch.nn.Module):
@@ -362,6 +389,7 @@ class Group_SE(torch.nn.Module):
             return torch.relu(x)
 
     def forward(self, x):
+<<<<<<< HEAD
         gap = torch.mean(x, [2, 3], keepdim=True)
         squeeze = self._activation_fn(self.squeeze(gap))
         extention = self.extention(squeeze)
@@ -403,3 +431,14 @@ class Mix_SS_Layer(torch.nn.Module):
         h = self.spectral_conv(h)
         return h + self.shortcut(x)
 >>>>>>> mix_conv
+=======
+        x_in = x
+        h = self._activation_fn(self.spatial_1(x))
+        h = self.spatial_2(h)
+        h = self.attention(h)
+        x = h + x_in
+        x = self.spectral(x)
+        if self.mode is not None:
+            x = self.spectral_attention(x)
+        return x
+>>>>>>> mse_sam
