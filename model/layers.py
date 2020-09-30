@@ -41,16 +41,17 @@ class SAMLoss(torch.nn.Module):
 
 class MSE_SAMLoss(torch.nn.Module):
 
-    def __init__(self, alpha=.5, mse_ratio=1., sam_ratio=.01):
+    def __init__(self, alpha=.5, beta=.5, mse_ratio=1., sam_ratio=.01):
         super(MSE_SAMLoss, self).__init__()
         self.alpha = alpha
+        self.beta = beta
         self.mse_loss = torch.nn.MSELoss()
         self.sam_loss = SAMLoss()
         self.mse_ratio = mse_ratio
         self.sam_ratio = sam_ratio
 
     def forward(self, x, y):
-        return self.alpha * self.mse_ratio * self.mse_loss(x, y) + (1 - self.alpha) * self.sam_ratio * self.sam_loss(x, y)
+        return self.alpha * self.mse_ratio * self.mse_loss(x, y) + self.beta * self.sam_ratio * self.sam_loss(x, y)
 
 
 class Conv_Block(torch.nn.Module):
