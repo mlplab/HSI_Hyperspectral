@@ -6,6 +6,8 @@
 *.zip
 # ignore .mat
 *.mat
+*output*
+*cpython*
 # ignore dataset
 *dataset*/
 # ignore ckpt
