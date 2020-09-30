@@ -315,8 +315,6 @@ class Attention_HSI_prior_block(Base_Module):
         if self.mode is not None:
             x = self.spectral_attention(x)
         return x
-<<<<<<< HEAD
-=======
 
 
 class GroupConv(torch.nn.Module):
@@ -386,7 +384,6 @@ class Group_SE(torch.nn.Module):
             return torch.relu(x)
 
     def forward(self, x):
-<<<<<<< HEAD
         gap = torch.mean(x, [2, 3], keepdim=True)
         squeeze = self._activation_fn(self.squeeze(gap))
         extention = self.extention(squeeze)
@@ -427,15 +424,4 @@ class Mix_SS_Layer(torch.nn.Module):
         h = self.se_block(h)
         h = self.spectral_conv(h)
         return h + self.shortcut(x)
->>>>>>> mix_conv
-=======
         x_in = x
-        h = self._activation_fn(self.spatial_1(x))
-        h = self.spatial_2(h)
-        h = self.attention(h)
-        x = h + x_in
-        x = self.spectral(x)
-        if self.mode is not None:
-            x = self.spectral_attention(x)
-        return x
->>>>>>> mse_sam
