@@ -172,10 +172,8 @@ class ReconstEvaluater(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = self._cut(output)
-                    metrics_labels = self._cut(labels)
-                    # metrics_output = output
-                    # metrics_labels = labels
+                    metrics_output = torch.clamp(output, min=0., max=1.)
+                    metrics_labels = torch.clamp(labels, min=0., max=1.)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
@@ -188,12 +186,6 @@ class ReconstEvaluater(Evaluater):
                     self._save_mat(i, idx, output)
         self._save_csv(output_evaluate, header)
         return self
-
-    def _cut(self, x):
-        x = torch.where(x > 1., self.ones, x)
-        x = torch.where(x < 0., self.zeros, x)
-        return x
-
 
 
 class ReconstEvaluater_skimage(Evaluater):
@@ -219,8 +211,8 @@ class ReconstEvaluater_skimage(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = self._cut(output.squeeze().numpy().transpose(1, 2, 0))
-                    metrics_labels = self._cut(labels.squeeze().numpy().transpose(1, 2, 0))
+                    metrics_output = np.clip(output.squeeze().numpy().transpose(1, 2, 0), 0., 1.)
+                    metrics_labels = np.clip(labels.squeeze().numpy().transpose(1, 2, 0), 0., 1.)
                     for metrics_func in evaluate_fn:
                         metrics = metrics_func(metrics_output, metrics_labels)
                         evaluate_list.append(f'{metrics.item():.7f}')
@@ -235,8 +227,3 @@ class ReconstEvaluater_skimage(Evaluater):
         self._save_csv(output_evaluate, header)
 
         return self
-
-    def _cut(self, x):
-        x = np.where(x > 1., 1, x)
-        x = np.where(x < 0., 0, x)
-        return x
