@@ -364,10 +364,7 @@ class Mix_Conv(torch.nn.Module):
 class Group_SE(torch.nn.Module):
     def __init__(self, input_ch, output_ch, chunks, kernel_size, **kwargs):
         super(Group_SE, self).__init__()
-        if 'ratio' in kwargs:
-            ratio = kwargs['ratio']
-        else:
-            ratio = 2
+        ratio = kwargs.get('ratio', 2)
         self.activation = kwargs.get('activation')
         feature_num = max(1, output_ch // ratio)
         self.squeeze = GroupConv(input_ch, feature_num, chunks, kernel_size, 1, 0)
@@ -396,11 +393,12 @@ class Mix_SS_Layer(torch.nn.Module):
         super(Mix_SS_Layer, self).__init__()
         self.activation = kwargs.get('activation')
         se_flag = kwargs.get('se_flag')
+        ratio = kwargs.get('ratio', 2)
         # self.spatial_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
         self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
         self.mix_conv = Mix_Conv(feature_num, feature_num, chunks)
         if se_flag:
-            self.se_block = Group_SE(feature_num, feature_num, chunks, kernel_size=1)
+            self.se_block = Group_SE(feature_num, feature_num, chunks, kernel_size=1, ratio=ratio)
         else:
             self.se_block = torch.nn.Sequential()
         self. spectral_conv = GroupConv(feature_num, output_ch, group_num, kernel_size=1, stride=1)
