@@ -366,8 +366,12 @@ class Group_SE(torch.nn.Module):
         super(Group_SE, self).__init__()
         ratio = kwargs.get('ratio', 2)
         self.activation = kwargs.get('activation')
-        feature_num = max(1, output_ch // ratio)
-        self.squeeze = GroupConv(input_ch, feature_num, chunks, kernel_size, 1, 0)
+        if ratio == 1:
+            feature_num = input_ch
+            self.squeeze = torch.nn.Sequential()
+        else:
+            feature_num = max(1, output_ch // ratio)
+            self.squeeze = GroupConv(input_ch, feature_num, chunks, kernel_size, 1, 0)
         self.extention = GroupConv(feature_num, output_ch, chunks, kernel_size, 1, 0)
 
     def _activation_fn(self, x):
