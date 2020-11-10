@@ -132,6 +132,7 @@ class Evaluater(object):
         return self
 
     def _save_csv(self, output_evaluate, header, ids):
+        ids.append('Mean')
         header.append('Time')
         output_evaluate_np = np.array(output_evaluate, dtype=np.float32)
         means = list(np.mean(output_evaluate_np, axis=0))
