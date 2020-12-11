@@ -1,6 +1,7 @@
 # coding: utf-8
 
 
+import math
 import numpy as np
 import torch
 
@@ -309,11 +310,11 @@ class Ghost_layer(torch.nn.Module):
     def __init__(self, input_ch, output_ch, *args, kernel_size=1, stride=1, dw_kernel=3, dw_stride=1, ratio=2, **kwargs):
         super(Ghost_layer, self).__init__()
         self.output_ch = output_ch
-        primary_ch = int(np.ceil(output_ch / ratio))
-        new_ch = output_ch * (ratio - 1)
+        primary_ch = math.ceil(output_ch / ratio)
+        cheap_ch = primary_ch * (ratio - 1)
         self.activation = kwargs.get('activation')
         self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
-        self.cheep_conv = torch.nn.Conv2d(primary_ch, new_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
+        self.cheep_conv = torch.nn.Conv2d(primary_ch, cheap_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
 
     def _activation_fn(self, x):
         if self.activation == 'swish':
