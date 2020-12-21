@@ -11,9 +11,9 @@ class Ghost_HSCNN(torch.nn.Module):
     def __init__(self, input_ch, output_ch, feature_num=64, layer_num=9, **kwargs):
         super(Ghost_HSCNN, self).__init__()
         self.activation = kwargs.get('activation', 'relu')
-        self.se_flag = kwargs.get('se_flag', False)
+        s = kwargs.get('s', 2)
         self.start_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
-        self.ghost_layers = torch.nn.ModuleList([Ghost_layer(feature_num, feature_num) for _ in range(layer_num)])
+        self.ghost_layers = torch.nn.ModuleList([Ghost_layer(feature_num, feature_num, ratio=s) for _ in range(layer_num)])
         self.output_conv = torch.nn.Conv2d(feature_num, output_ch, 3, 1, 1)
 
     def _activation_fn(self, x):
