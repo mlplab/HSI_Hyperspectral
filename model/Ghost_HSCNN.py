@@ -3,7 +3,7 @@
 
 import torch
 from torchsummary import summary
-from .layers import Ghost_layer, Ghost_Bottleneck, Swish, Mish, FReLU
+from .layers import Ghost_layer, Ghost_Bottleneck, ReLU, Leaky, Swish, Mish, FReLU
 
 
 class Ghost_HSCNN(torch.nn.Module):
@@ -14,7 +14,7 @@ class Ghost_HSCNN(torch.nn.Module):
         self.se_flag = kwargs.get('se_flag', False)
         mode = kwargs.get('mode', None)
         ratio = kwargs.get('ratio', 2)
-        activations = {'relu': torch.nn.ReLU, 'leaky': torch.nn.LeakyReLU, 'swish': Swish, 'mish': Mish, 'frelu': FReLU}
+        activations = {'relu': ReLU, 'leaky': Leaky, 'swish': Swish, 'mish': Mish, 'frelu': FReLU}
         activation_kernel = 3
         activation_stride = 1
         self.start_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
