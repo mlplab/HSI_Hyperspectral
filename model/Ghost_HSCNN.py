@@ -36,7 +36,7 @@ class Ghost_HSCNN(torch.nn.Module):
 
         x = self.start_conv(x)
         x_in = x
-        for ghost_layer, activation in zip(slef.ghost_layers, self.actvations):
+        for ghost_layer, activation in zip(self.ghost_layers, self.actvations):
             x = activation(ghost_layer(x))
         output = self.output_conv(x + x_in)
         return output
