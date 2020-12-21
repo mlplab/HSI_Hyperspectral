@@ -324,13 +324,13 @@ class Ghost_layer(torch.nn.Module):
         chunks = kwargs.get('chunks', ratio)
         self.output_ch = output_ch
         primary_ch = int(np.ceil(output_ch / ratio))
-        new_ch = output_ch * (ratio - 1)
+        cheap_ch = primary_ch * (ratio - 1)
         self.activation = kwargs.get('activation')
         self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
         if mode == 'mix':
-            self.cheep_conv = Mix_Conv(primary_ch, new_ch, chunks=chunks)
+            self.cheep_conv = Mix_Conv(primary_ch, cheap_ch, chunks=chunks)
         else:
-            self.cheep_conv = torch.nn.Conv2d(primary_ch, new_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
+            self.cheep_conv = torch.nn.Conv2d(primary_ch, cheap_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
 
     def _activation_fn(self, x):
         if self.activation == 'swish':
