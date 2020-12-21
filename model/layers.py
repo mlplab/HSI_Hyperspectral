@@ -23,20 +23,37 @@ class FReLU(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, kernel_size, stride=1, **kwargs):
         super(FReLU, self).__init__()
-        self.depth = torch.nn.Conv2d(input_ch, output_ch, kernel_size, stride=stride, padding=kernel_size // 2)
+        self.depth = torch.nn.Conv3d(input_ch, output_ch, kernel_size, stride=stride, padding=kernel_size // 2)
 
     def forward(self, x):
         depth = self.depth(x)
         return torch.max(x, depth)
 
 
+class ReLU(torch.nn.Module):
+
+    def __init__(self, *args, **kwargs):
+        super(ReLU, self).__init__()
+        pass
+
+    def forward(self, x):
+        return max(x, 0)
+
 class Swish(torch.nn.Module):
+
+    def __init__(self, *args, **kwargs):
+        super(Swish, self).__init__()
+        pass
 
     def forward(self, x):
         return swish(x)
 
 
 class Mish(torch.nn.Module):
+
+    def __init__(self, *args, **kwargs):
+        super(Mish, self).__init__()
+        pass
 
     def forward(self, x):
         return mish(x)
