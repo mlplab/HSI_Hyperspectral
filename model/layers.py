@@ -37,7 +37,7 @@ class ReLU(torch.nn.Module):
         pass
 
     def forward(self, x):
-        return max(x, 0)
+        return torch.relu(x)
 
 
 class Leaky(torch.nn.Module):
