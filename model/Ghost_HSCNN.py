@@ -17,7 +17,7 @@ class Ghost_HSCNN(torch.nn.Module):
         activations = {'relu': torch.nn.ReLU, 'leaky': torch.nn.LeakyReLU, 'swish': Swish, 'mish': Mish, 'frelu': FReLU}
         self.start_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
         self.ghost_layers = torch.nn.ModuleList([Ghost_layer(feature_num, feature_num, ratio, mode) for _ in range(layer_num)])
-        self.activations = torch.nn.ModuleList([activations[self.activation] for _ in range(layer_num)])
+        self.activations = torch.nn.ModuleList([activations[self.activation]() for _ in range(layer_num)])
         self.output_conv = torch.nn.Conv2d(feature_num, output_ch, 3, 1, 1)
 
     def _activation_fn(self, x):
