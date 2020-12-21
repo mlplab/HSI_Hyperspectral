@@ -2,6 +2,7 @@
 
 
 import os
+import pickle
 import numpy as np
 from tqdm import tqdm
 from tqdm import tqdm_notebook
@@ -37,6 +38,10 @@ class Trainer(object):
             shape = (64, 31, 48, 48)
         self.zeros = torch.zeros(shape).to(device)
         self.ones = torch.ones(shape).to(device)
+        self.output_save = kwargs.get('output_save')
+        self.output_path = kwargs.get('output_path')
+        self.train_output = []
+        self.val_output = []
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
@@ -70,6 +75,8 @@ class Trainer(object):
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
+            show_mean = np.insert(show_mean, 0, show_loss)
+            self.train_output.append(show_mean)
             mode = 'Val'
             self.model.eval()
             desc_str = f'{mode:>5} Epoch: {epoch + 1:05d} / {epochs:05d}'
@@ -85,6 +92,8 @@ class Trainer(object):
                     evaluate = [f'{show_mean[0]:.7f}', f'{show_mean[1]:.7f}', f'{show_mean[2]:.7f}']
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
+            show_mean = np.insert(show_mean, 0, show_loss)
+            self.val_output.append(show_mean)
             if self.callbacks:
                 for callback in self.callbacks:
                     callback.callback(self.model, epoch, loss=train_loss,
@@ -92,6 +101,9 @@ class Trainer(object):
             if self.scheduler is not None:
                 self.scheduler.step()
             print('-' * int(columns))
+
+        if self.output_save is None:
+            self._output_save()
 
         return self
 
@@ -127,6 +139,12 @@ class Trainer(object):
         x = torch.where(x > 1., self.ones[:bs], x)
         x = torch.where(x < 0., self.zeros[:bs], x)
         return x
+
+    def _output_save(self):
+        with open(os.path.join(self.output_path, 'train.pkl'), 'wb') as f:
+            pickle.dump(self.train_output, f)
+        with open(os.path.join(self.output_path, 'val.pkl'), 'wb') as f:
+            pickle.dump(self.val_output, f)
 
 
 class Deeper_Trainer(Trainer):

@@ -131,12 +131,13 @@ class Evaluater(object):
         scipy.io.savemat(os.path.join(self.save_mat_path, f'{i:05d}.mat'), {'data': output_mat, 'idx': idx})
         return self
 
-    def _save_csv(self, output_evaluate, header):
+    def _save_csv(self, output_evaluate, header, ids):
+        ids.append('Mean')
         header.append('Time')
         output_evaluate_np = np.array(output_evaluate, dtype=np.float32)
         means = list(np.mean(output_evaluate_np, axis=0))
         output_evaluate.append(means)
-        output_evaluate_csv = pd.DataFrame(output_evaluate)
+        output_evaluate_csv = pd.DataFrame(output_evaluate, index=ids)
         output_evaluate_csv.to_csv(self.save_csv_path, header=header)
         print(means)
         return self
@@ -156,6 +157,7 @@ class ReconstEvaluater(Evaluater):
         output_evaluate = []
         # _, columns = os.popen('stty size', 'r').read().split()
         # columns = int(columns) // 2
+        ids = []
         columns = 200
         with torch.no_grad():
             # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
@@ -186,7 +188,8 @@ class ReconstEvaluater(Evaluater):
                     del show_evaluate
                     self._save_all(i, inputs, output, labels)
                     self._save_mat(i, idx, output)
-        self._save_csv(output_evaluate, header)
+                    ids.append(idx)
+        self._save_csv(output_evaluate, header, ids)
         return self
 
     def _cut(self, x):
