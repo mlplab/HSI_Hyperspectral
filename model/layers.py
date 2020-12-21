@@ -39,6 +39,17 @@ class ReLU(torch.nn.Module):
     def forward(self, x):
         return max(x, 0)
 
+
+class Leaky(torch.nn.Module):
+
+    def __init__(self, *args, **kwargs):
+        super(Leaky, self).__init__()
+        self.alpha = kwargs.get('alpha', .02)
+
+    def forward(self, x):
+        return torch.where(x < 0., x * self.alpha, x)
+
+
 class Swish(torch.nn.Module):
 
     def __init__(self, *args, **kwargs):
