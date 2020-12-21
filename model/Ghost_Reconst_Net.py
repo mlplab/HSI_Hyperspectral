@@ -12,12 +12,7 @@ class Ghost_Reconst_Net(torch.nn.Module):
         super(Ghost_Reconst_Net, self).__init__()
 
 
-        se_flag = kwargs.get('se_flag')
-        if se_flag is None:
-            se_flag = False
-        else:
-            se_flag = True
-
+        se_flag = kwargs.get('se_flag', False)
         activation = kwargs.get('activation')
         if output_ch % 2 != 0:
             ghost_output = output_ch + 1
