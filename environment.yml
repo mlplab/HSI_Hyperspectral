@@ -70,5 +70,4 @@ dependencies:
   - zstd=1.4.5=h9ceee32_0
   - pip:
     - torchsummary==1.5.1
-prefix: /home/kohei/anaconda3/envs/sciEnv
 
