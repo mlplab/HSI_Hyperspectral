@@ -111,7 +111,6 @@ if __name__ == '__main__':
 
     x = torch.rand((1, 1, 64, 64))
     # model = Ghost_HSCNN_Bneck(1, 31, ratio=2)
-    # summary(model, (1, 64, 64))
     model = Ghost_HSCNN(1, 31)
     summary(model, (1, 64, 64))
     result = model.show_features(x, layer_num=list(range(1, 9 + 1)), output_layer=True)
