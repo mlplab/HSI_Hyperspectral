@@ -6,7 +6,7 @@ CMDNAME=`basename $0`
 
 # batch_size=64
 # epoch=150
-dataset="Harvard"
+dataset=("CAVE" "Harvard")
 concat="False"
 # model_name=("HSCNN HSI_Network Attention_HSI_None Attention_HSI_GAP Attention_HSI_GVP")
 model_name=("HSCNN HSI_Network HyperReconNet")

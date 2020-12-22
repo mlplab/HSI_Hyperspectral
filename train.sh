@@ -8,7 +8,7 @@ batch_size=64
 epoch=150
 datasets=("CAVE" "Harvard")
 concat="False"
-model_name=("HSCNN DeepSSPrior HyperReconNet Ghost Ghost Ghost")
+model_name=("HSCNN HyperReconNet DeepSSPrior")
 block_num=9
 sRatio=(2 3 4)
 

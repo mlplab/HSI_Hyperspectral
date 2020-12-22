@@ -50,9 +50,11 @@ class Trainer(object):
         elif isinstance(init_epoch, int):
             assert 'Please enter int to init_epochs'
 
-        # _, columns = os.popen('stty size', 'r').read().split()
-        # columns = int(columns)
-        columns = 200
+        _, columns = os.popen('stty size', 'r').read().split()
+        columns = int(columns)
+        # columns = 200
+        return_train = []
+        return_val = []
 
         for epoch in range(init_epoch, epochs):
             dt_now = datetime.now()
@@ -101,11 +103,13 @@ class Trainer(object):
             if self.scheduler is not None:
                 self.scheduler.step()
             print('-' * int(columns))
+            return_train.append(train_loss)
+            return_val.append(val_loss)
 
         if self.output_save is None:
             self._output_save()
 
-        return self
+        return return_train, return_val
 
     def _trans_data(self, inputs, labels):
         inputs = inputs.to(device)

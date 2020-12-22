@@ -1,5 +1,6 @@
 # coding: utf-8
 
+
 import os
 import sys
 import argparse
@@ -61,6 +62,7 @@ os.makedirs(callback_result_path, exist_ok=True)
 filter_path = os.path.join('../SCI_dataset', 'D700_CSF.mat')
 ckpt_path = os.path.join('../SCI_ckpt', f'{data_name}_{dt_now.month:02d}{dt_now.day:02d}')
 trained_ckpt_path = f'all_checkpoint_{dt_now.month:02d}{dt_now.day:02d}'
+os.makedirs(trained_ckpt_path, exist_ok=True)
 
 
 model_obj = {'HSCNN': HSCNN, 'HyperReconNet': HyperReconNet, 'DeepSSPrior': HSI_Network_share, 'Ghost': Ghost_HSCNN}
@@ -95,11 +97,12 @@ summary(model, (input_ch, 64, 64))
 print(model_name)
 
 
-# callback_dataset = PatchMaskDataset(callback_path, callback_mask_path, concat=concat_flag)
-# draw_ckpt = Draw_Output(callback_dataset, data_name, save_path=callback_result_path, filter_path=filter_path)
 ckpt_cb = ModelCheckPoint(ckpt_path, model_name + f'_{block_num}',
                           mkdir=True, partience=1, varbose=True)
 trainer = Trainer(model, criterion, optim, scheduler=scheduler, callbacks=[ckpt_cb])
-trainer.train(epochs, train_dataloader, test_dataloader)
+train_loss, val_loss = trainer.train(epochs, train_dataloader, test_dataloader)
 torch.save({'model_state_dict': model.state_dict(),
-    'epoch': epochs}, os.path.join(trained_ckpt_path, 'f{model_name}_{block_num:02d}.tar'))
+            'optim': optim.state_dict(),
+            'train_loss': train_loss, 'val_loss': val_loss,
+            'epoch': epochs},
+            os.path.join(trained_ckpt_path, 'f{model_name}_{block_num:02d}.tar'))
