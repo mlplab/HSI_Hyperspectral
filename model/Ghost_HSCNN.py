@@ -15,6 +15,7 @@ class Ghost_HSCNN(torch.nn.Module):
         mode = kwargs.get('mode', None)
         ratio = kwargs.get('ratio', 2)
         activations = {'relu': ReLU, 'leaky': Leaky, 'swish': Swish, 'mish': Mish, 'frelu': FReLU}
+        self.feature_name = []
         activation_kernel = 3
         activation_stride = 1
         self.start_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
@@ -37,10 +38,14 @@ class Ghost_HSCNN(torch.nn.Module):
     def forward(self, x):
 
         x = self.start_conv(x)
+        self.feature_name.append('start_conv')
         x_in = x
         for ghost_layer, activation in zip(self.ghost_layers, self.activations):
             x = activation(ghost_layer(x))
+            self.feature_name.append('ghost')
+            self.feature_name.append('activation')
         output = self.output_conv(x + x_in)
+        self.feature_name.append('output_conv')
         return output
 
     def show_features(self, x, layer_num=0, output_layer=True, activation=True):
@@ -51,7 +56,7 @@ class Ghost_HSCNN(torch.nn.Module):
             layer_num = [layer_num]
         layer_num = set(layer_num)
         layer_nums = []
-        layer_nums = [True if i in layer_num else False for i in range(len(self.ghost_layers))]
+        layer_nums = [True if i in layer_num else False for i in range(len(self.ghost_layers) + len(self.activations))]
 
         # add start_conv
         x = self.start_conv(x)
@@ -60,10 +65,10 @@ class Ghost_HSCNN(torch.nn.Module):
         x_in = x
 
         # add feature map
-        for i, feature_map in enumerate(self.ghost_layers):
+        for i, (feature_map, activation) in enumerate(zip(self.ghost_layers, self.activations)):
             x = feature_map(x)
             # if activation is True:
-            x = self._activation_fn(x)
+            x = self.activation(x)
             if layer_nums[i]:
                 result.append(x)
 
