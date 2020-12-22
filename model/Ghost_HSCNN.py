@@ -18,7 +18,7 @@ class Ghost_HSCNN(torch.nn.Module):
         activation_kernel = 3
         activation_stride = 1
         self.start_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
-        self.ghost_layers = torch.nn.ModuleList([Ghost_layer(feature_num, feature_num, ratio, mode=mode) for _ in range(layer_num)])
+        self.ghost_layers = torch.nn.ModuleList([Ghost_layer(feature_num, feature_num, ratio=ratio, mode=mode) for _ in range(layer_num)])
         self.activations = torch.nn.ModuleList([activations[self.activation](feature_num, feature_num, activation_kernel, activation_stride) for _ in range(layer_num)])
         self.output_conv = torch.nn.Conv2d(feature_num, output_ch, 3, 1, 1)
 
@@ -111,6 +111,7 @@ if __name__ == '__main__':
 
     x = torch.rand((1, 1, 64, 64))
     # model = Ghost_HSCNN_Bneck(1, 31, ratio=2)
+    summary(model, (1, 64, 64))
     model = Ghost_HSCNN(1, 31)
     summary(model, (1, 64, 64))
     result = model.show_features(x, layer_num=list(range(1, 9 + 1)), output_layer=True)
