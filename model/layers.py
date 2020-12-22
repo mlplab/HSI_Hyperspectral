@@ -431,8 +431,6 @@ class GroupConv(torch.nn.Module):
             split = torch.chunk(x, self.chunks, dim=1)
             return torch.cat([group_layer(split_x) for group_layer, split_x in zip(self.group_layers, split)], dim=1)
 
-<<<<<<< HEAD
-=======
 
 class Mix_Conv(torch.nn.Module):
 
@@ -453,7 +451,6 @@ class Mix_Conv(torch.nn.Module):
         output = torch.cat([conv_layer(split_x) for conv_layer, split_x in zip(self.conv_layers, split)], dim=1)
         return output
 
->>>>>>> f08b7b6a3adb9a5c90cec74d9c6d8cd96adc1cc9
 
 class Group_SE(torch.nn.Module):
     def __init__(self, input_ch, output_ch, chunks, kernel_size, **kwargs):
@@ -509,28 +506,12 @@ class Mix_SS_Layer(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, chunks, *args, stride=1, feature_num=64, group_num=1, **kwargs):
         super(Mix_SS_Layer, self).__init__()
-<<<<<<< HEAD
         self.activation = kwargs.get('activation', 'relu')
         se_flag = kwargs.get('se_flag', False)
         self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
         self.mix_conv = Mix_Conv(feature_num, feature_num, chunks)
         self.se_block = Group_SE(feature_num, feature_num, chunks, kernel_size=1) if se_flag is True else torch.nn.Sequential()
         self.spectral_conv = GroupConv(feature_num, output_ch, group_num, kernel_size=1, stride=1)
-=======
-        self.activation = kwargs.get('activation')
-        se_flag = kwargs.get('se_flag')
-        ratio = kwargs.get('ratio', 2)
-        # self.spatial_conv = torch.nn.Conv2d(input_ch, feature_num, 3, 1, 1)
-        self.spatial_conv = GroupConv(input_ch, feature_num, group_num, kernel_size=3, stride=1)
-        self.mix_conv = Mix_Conv(feature_num, feature_num, chunks)
-        if se_flag:
-            self.se_block = Group_SE(feature_num, feature_num, chunks, kernel_size=1, ratio=ratio)
-        else:
-            self.se_block = torch.nn.Sequential()
-        self. spectral_conv = GroupConv(feature_num, output_ch, group_num, kernel_size=1, stride=1)
-        # self.spectral_conv = torch.nn.Conv2d(feature_num, output_ch, 1, 1, 0)
-        # self.mix_ss = torch.nn.Sequential(spatial_conv, mix_conv, spectral_conv)
->>>>>>> f08b7b6a3adb9a5c90cec74d9c6d8cd96adc1cc9
         self.shortcut = torch.nn.Sequential()
 
     def _activation_fn(self, x):
@@ -540,15 +521,10 @@ class Mix_SS_Layer(torch.nn.Module):
             return mish(x)
         elif self.activation == 'leaky' or self.activation == 'leaky_relu':
             return torch.nn.functional.leaky_relu(x)
-<<<<<<< HEAD
         elif self.activation == 'relu':
             return torch.nn.function.relu(x)
         else:
             return x
-=======
-        else:
-            return torch.relu(x)
->>>>>>> f08b7b6a3adb9a5c90cec74d9c6d8cd96adc1cc9
 
     def forward(self, x):
         h = self._activation_fn(self.spatial_conv(x))
