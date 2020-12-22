@@ -32,6 +32,8 @@ if args.concat == 'False':
 else:
     concat_flag = True
     input_ch = 32
+
+
 model_name = args.model_name
 block_num = args.block_num
 img_path = f'../SCI_dataset/My_{data_name}'
@@ -54,17 +56,9 @@ if __name__ == '__main__':
 
     test_dataset = PatchEvalDataset(test_path, mask_path, transform=None, concat=concat_flag)
     model_name = args.model_name
-    if model_name == 'HSCNN':
-        model = HSCNN(input_ch, 31, activation='leaky')
-    elif model_name == 'DeepSSPrior':
-        model = HSI_Network_share(input_ch, 31, block_num=block_num)
-    elif model_name == 'HyperReconNet':
-        model = HyperReconNet(input_ch, 31)
-    elif model_name == 'Attention':
-        model = Attention_HSI_Model_share(input_ch, 31, mode=None, ratio=4, block_num=block_num)
-    elif model_name == 'Dense_HSI':
-        model = Dense_HSI_prior_Network(input_ch, 31, block_num=block_num, activation='relu')
-    else:
+    model = model_obj[model_name](input_ch, 31, block_num=block_num,
+                              activation=activations[model_name], s=s)
+    if model_name not in model_obj.keys():
         print('Enter Model Name')
         sys.exit(0)
 

@@ -40,8 +40,7 @@ class Trainer(object):
         self.ones = torch.ones(shape).to(device)
         self.output_save = kwargs.get('output_save')
         self.output_path = kwargs.get('output_path')
-        self.train_output = []
-        self.val_output = []
+        self.colab_mode = kwargs.get('colab_mode', False)
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
@@ -50,9 +49,15 @@ class Trainer(object):
         elif isinstance(init_epoch, int):
             assert 'Please enter int to init_epochs'
 
-        # _, columns = os.popen('stty size', 'r').read().split()
-        # columns = int(columns)
-        columns = 200
+        if self.colab_mode is False:
+            _, columns = os.popen('stty size', 'r').read().split()
+            columns = int(columns)
+        else:
+            columns = 200
+        train_output = []
+        val_output = []
+        train_output_loss = []
+        val_output_loss = []
 
         for epoch in range(init_epoch, epochs):
             dt_now = datetime.now()
@@ -76,7 +81,8 @@ class Trainer(object):
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             show_mean = np.insert(show_mean, 0, show_loss)
-            self.train_output.append(show_mean)
+            train_output.append(show_mean)
+
             mode = 'Val'
             self.model.eval()
             desc_str = f'{mode:>5} Epoch: {epoch + 1:05d} / {epochs:05d}'
@@ -93,7 +99,7 @@ class Trainer(object):
                     self._step_show(pbar, Loss=f'{show_loss:.7f}', Evaluate=evaluate)
                     torch.cuda.empty_cache()
             show_mean = np.insert(show_mean, 0, show_loss)
-            self.val_output.append(show_mean)
+            val_output.append(show_mean)
             if self.callbacks:
                 for callback in self.callbacks:
                     callback.callback(self.model, epoch, loss=train_loss,
@@ -102,10 +108,7 @@ class Trainer(object):
                 self.scheduler.step()
             print('-' * int(columns))
 
-        if self.output_save is None:
-            self._output_save()
-
-        return self
+        return train_output, val_output
 
     def _trans_data(self, inputs, labels):
         inputs = inputs.to(device)
@@ -139,12 +142,6 @@ class Trainer(object):
         x = torch.where(x > 1., self.ones[:bs], x)
         x = torch.where(x < 0., self.zeros[:bs], x)
         return x
-
-    def _output_save(self):
-        with open(os.path.join(self.output_path, 'train.pkl'), 'wb') as f:
-            pickle.dump(self.train_output, f)
-        with open(os.path.join(self.output_path, 'val.pkl'), 'wb') as f:
-            pickle.dump(self.val_output, f)
 
 
 class Deeper_Trainer(Trainer):

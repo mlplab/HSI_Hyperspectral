@@ -8,10 +8,10 @@
 *.mat
 *output*
 *cpython*
+__pycache__/
 # ignore dataset
 *dataset*/
 # ignore ckpt
 *ckpt*/
 # ignore output
 *output*/
-*.cpython*
