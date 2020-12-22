@@ -42,6 +42,7 @@ class Trainer(object):
         self.output_path = kwargs.get('output_path')
         self.train_output = []
         self.val_output = []
+        self.colab_mode = kwargs.get('colab_mode', False)
 
     def train(self, epochs, train_dataloader, val_dataloader, init_epoch=None):
 
@@ -50,9 +51,11 @@ class Trainer(object):
         elif isinstance(init_epoch, int):
             assert 'Please enter int to init_epochs'
 
-        _, columns = os.popen('stty size', 'r').read().split()
-        columns = int(columns)
-        # columns = 200
+        if self.cobal_mode:
+            _, columns = os.popen('stty size', 'r').read().split()
+            columns = int(columns)
+        else:
+            columns = 200
         return_train = []
         return_val = []
 
