@@ -347,7 +347,7 @@ class Attention_HSI_prior_block(Base_Module):
 
 class Ghost_layer(torch.nn.Module):
 
-    def __init__(self, input_ch, output_ch, *args, kernel_size=1, stride=1, dw_kernel=3, dw_stride=1, ratio=2, **kwargs):
+    def __init__(self, input_ch, output_ch, *args, kernel_size=3, stride=1, dw_kernel=3, dw_stride=1, ratio=2, **kwargs):
         super(Ghost_layer, self).__init__()
         mode = kwargs.get('mode', None)
         chunks = kwargs.get('chunks', ratio)
@@ -357,9 +357,10 @@ class Ghost_layer(torch.nn.Module):
         self.activation = kwargs.get('activation')
         self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
         if mode == 'mix':
-            self.cheep_conv = Mix_Conv(primary_ch, cheap_ch, chunks=chunks)
+            self.cheap_conv_before = torch.nn.COnv2df(primary_ch, cheap_ch, 1, 1, 0)
+            self.cheap_conv = Mix_Conv(cheap_ch, cheap_ch, chunks=chunks)
         else:
-            self.cheep_conv = torch.nn.Conv2d(primary_ch, cheap_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
+            self.cheap_conv = torch.nn.Conv2d(primary_ch, cheap_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
 
     def _activation_fn(self, x):
         if self.activation == 'swish':
@@ -374,8 +375,8 @@ class Ghost_layer(torch.nn.Module):
             return x
 
     def forward(self, x):
-        primary_x = self._activation_fn(self.primary_conv(x))
-        new_x = self._activation_fn(self.cheep_conv(primary_x))
+        primary_x = self.primary_conv(x)
+        new_x = self.cheep_conv(primary_x)
         output = torch.cat([primary_x, new_x], dim=1)
         return output[:, :self.output_ch, :, :]
 
@@ -438,13 +439,14 @@ class Mix_Conv(torch.nn.Module):
         super(Mix_Conv, self).__init__()
 
         self.chunks = chunks
-        self.split_layer = split_layer(output_ch, chunks)
-        self.conv_layers = torch.nn.ModuleList([torch.nn.Conv2d(self.split_layer[idx],
-                                                                self.split_layer[idx],
+        self.output_split = split_layer(output_ch, chunks)
+        self.input_split = split_layer(input_ch, chunks)
+        self.conv_layers = torch.nn.ModuleList([torch.nn.Conv2d(self.input_split[idx],
+                                                                self.output_split[idx],
                                                                 kernel_size=2 * idx + 3,
                                                                 stride=stride,
                                                                 padding=(2 * idx + 3) // 2,
-                                                                groups=self.split_layer[idx]) for idx in range(chunks)])
+                                                                groups=self.input_split[idx]) for idx in range(chunks)])
 
     def forward(self, x):
         split = torch.chunk(x, self.chunks, dim=1)
