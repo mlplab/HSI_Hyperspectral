@@ -106,5 +106,4 @@ dependencies:
   - zstd=1.3.7
   - pip:
     - torchsummary==1.5.1
-prefix: /home/mlp3/anaconda3/envs/sciEnv
 
