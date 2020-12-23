@@ -357,8 +357,9 @@ class Ghost_layer(torch.nn.Module):
         self.activation = kwargs.get('activation')
         self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
         if mode == 'mix':
-            self.cheap_conv_before = torch.nn.COnv2df(primary_ch, cheap_ch, 1, 1, 0)
-            self.cheap_conv = Mix_Conv(cheap_ch, cheap_ch, chunks=chunks)
+            cheap_conv_before = torch.nn.Conv2d(primary_ch, cheap_ch, 1, 1, 0)
+            mix = Mix_Conv(cheap_ch, cheap_ch, chunks=chunks)
+            self.cheap_conv = torch.nn.Sequential(*[cheap_conv_before, mix])
         else:
             self.cheap_conv = torch.nn.Conv2d(primary_ch, cheap_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
 
@@ -376,7 +377,7 @@ class Ghost_layer(torch.nn.Module):
 
     def forward(self, x):
         primary_x = self.primary_conv(x)
-        new_x = self.cheep_conv(primary_x)
+        new_x = self.cheap_conv(primary_x)
         output = torch.cat([primary_x, new_x], dim=1)
         return output[:, :self.output_ch, :, :]
 
