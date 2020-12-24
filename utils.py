@@ -36,7 +36,7 @@ def make_patch(data_path, save_path, size=256, step=256, ch=24, data_key='data')
     os.mkdir(save_path)
 
     data_list = os.listdir(data_path)
-    # data_list.sort()
+    data_list.sort()
     for i, name in enumerate(tqdm(data_list, ascii=True)):
         idx = name.split('.')[0]
         f = scipy.io.loadmat(os.path.join(data_path, name))
