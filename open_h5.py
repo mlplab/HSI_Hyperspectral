@@ -4,6 +4,11 @@
 import os
 import h5py as h5
 import scipy.io
+import matplotlib.pyplot as plt
+
+
+def normalize(x):
+    return (x - x.min()) / (x.max() - x.min())
 
 
 data_dir = '../SCI_dataset'
@@ -22,3 +27,7 @@ for img_name in img_list:
         print(img_name, 'continue')
         x = scipy.io.loadmat(os.path.join(img_dir, img_name))
         print(x.keys())
+        data = normalize(x['ref'])
+        # print(data.max(), data.min(), data.shape)
+        # plt.imshow(data[:, :, (26, 16, 3)])
+        # plt.show()

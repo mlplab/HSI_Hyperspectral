@@ -2,8 +2,9 @@
 
 
 import os
-import h5py
+import h5py as h5
 import numpy as np
+import scipy.io
 from tqdm import tqdm
 
 
@@ -19,14 +20,19 @@ save_dir = os.path.join(data_dir, 'ICVL_2020_h5')
 os.makedirs(save_dir, exist_ok=True)
 
 
-for img_name in tqdm(img_list):
-    with h5py.File(os.path.join(img_dir, img_name), 'r') as f:
-        data = np.array(f['rad'])
-        data = normalize(data.transpose((1, 2, 0))[::-1])
-        bands = np.array(f['bands'])
-        rgb = np.array(f['rgb'])
+with tqdm(img_list, ascii=True) as pbar:
+    for i, img_name in enumerate(pbar):
+        pbar.set_postfix({'name': f'{img_name:>30}'})
+        if os.path.exists(os.path.join(save_dir, img_name)):
+            continue
+        try:
+            open_format = 'h5'
+            with h5.File(os.path.join(img_dir, img_name), 'r') as f:
+                data = np.array(f['rad'])
+                data = normalize(data.transpose((1, 2, 0))[::-1])
+        except OSError:
+            f = scipy.io.loadmat(os.path.join(img_dir, img_name))
+            data = normalize(np.array(f['ref']))
 
-    with h5py.File(os.path.join(save_dir, img_name), 'w') as f:
-        f.create_dataset('data', data=data)
-        f.create_dataset('bands', data=bands)
-        f.create_dataset('rgb', data=rgb)
+        with h5.File(os.path.join(save_dir, img_name), 'w') as f:
+            f.create_dataset('data', data=data)
