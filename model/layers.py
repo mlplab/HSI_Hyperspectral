@@ -349,36 +349,29 @@ class Ghost_layer(torch.nn.Module):
 
     def __init__(self, input_ch, output_ch, *args, kernel_size=3, stride=1, dw_kernel=3, dw_stride=1, ratio=2, **kwargs):
         super(Ghost_layer, self).__init__()
-        mode = kwargs.get('mode', None)
-        chunks = kwargs.get('chunks', ratio)
+        self.ratio = ratio
+        self.mode = kwargs.get('mode', None).lower()
+        chunks = kwargs.get('chunks', ratio - 1)
         self.output_ch = output_ch
         primary_ch = int(np.ceil(output_ch / ratio))
-        cheap_ch = primary_ch * (ratio - 1)
-        self.activation = kwargs.get('activation')
+        cheap_ch = primary_ch * (self.ratio - 1)
+        self.activation = kwargs.get('activation', 'relu').lower()
         self.primary_conv = torch.nn.Conv2d(input_ch, primary_ch, kernel_size, stride, padding=kernel_size // 2)
-        if mode == 'mix':
+        if self.mode == 'mix1':
             cheap_conv_before = torch.nn.Conv2d(primary_ch, cheap_ch, 1, 1, 0)
             mix = Mix_Conv(cheap_ch, cheap_ch, chunks=chunks)
             self.cheap_conv = torch.nn.Sequential(*[cheap_conv_before, mix])
+        elif self.mode == 'mix2':
+            self.cheap_conv = Mix_Conv(cheap_ch, cheap_ch, chunks=chunks)
         else:
             self.cheap_conv = torch.nn.Conv2d(primary_ch, cheap_ch, dw_kernel, dw_stride, padding=dw_kernel // 2, groups=primary_ch)
 
-    def _activation_fn(self, x):
-        if self.activation == 'swish':
-            return swish(x)
-        elif self.activation == 'mish':
-            return mish(x)
-        elif self.activation == 'leaky' or self.activation == 'leaky_relu':
-            return torch.nn.functional.leaky_relu(x)
-        elif self.activation == 'relu':
-            return torch.relu(x)
-        else:
-            return x
-
     def forward(self, x):
         primary_x = self.primary_conv(x)
-        new_x = self.cheap_conv(primary_x)
-        output = torch.cat([primary_x, new_x], dim=1)
+        if self.mode == 'mix2':
+            primary_x = torch.cat([x for _ in range(self.ratio - 1)], dim=1)
+        cheap_x = self.cheap_conv(primary_x)
+        output = torch.cat([primary_x, cheap_x], dim=1)
         return output[:, :self.output_ch, :, :]
 
 
