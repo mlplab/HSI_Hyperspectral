@@ -27,7 +27,7 @@ parser.add_argument('--dataset', '-d', default='Harvard', type=str, help='Select
 parser.add_argument('--concat', '-c', default='False', type=str, help='Concat mask by input')
 parser.add_argument('--model_name', '-m', default='HSCNN', type=str, help='Model Name')
 parser.add_argument('--block_num', '-bn', default=9, type=int, help='Model Block Number')
-parser.add_argument('--sRatio', '-s', default=2, type=int, help='Ghost ratio')
+parser.add_argument('--ratio', '-r', default=2, type=int, help='Ghost ratio')
 args = parser.parse_args()
 
 
@@ -43,7 +43,7 @@ else:
 data_name = args.dataset
 model_name = args.model_name
 block_num = args.block_num
-s = args.sRatio
+ratio = args.ratio
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -78,7 +78,7 @@ test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_siz
 
 
 model = model_obj[model_name](input_ch, 31, block_num=block_num,
-                              activation=activations[model_name], s=s)
+                              activation=activations[model_name], ratio=ratio)
 
 
 if model_name not in model_obj.keys():

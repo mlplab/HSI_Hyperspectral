@@ -21,6 +21,7 @@ parser.add_argument('--dataset', '-d', default='Harvard', type=str, help='Select
 parser.add_argument('--concat', '-c', default='False', type=str, help='Concat mask by input')
 parser.add_argument('--model_name', '-m', default='HSCNN', type=str, help='Model Name')
 parser.add_argument('--block_num', '-b', default=9, type=int, help='Model Block Number')
+parser.add_argument('--ratio', '-r', default=2, type=int, help='Ghost Models ratio')
 args = parser.parse_args()
 
 
@@ -36,6 +37,7 @@ else:
 
 model_name = args.model_name
 block_num = args.block_num
+ratio = args.ratio
 img_path = f'../SCI_dataset/My_{data_name}'
 test_path = os.path.join(img_path, 'eval_data')
 mask_path = os.path.join(img_path, 'eval_mask_data')
@@ -55,12 +57,13 @@ os.makedirs(output_mat_path, exist_ok=True)
 if __name__ == '__main__':
 
     test_dataset = PatchEvalDataset(test_path, mask_path, transform=None, concat=concat_flag)
-    model_name = args.model_name
-    model = model_obj[model_name](input_ch, 31, block_num=block_num,
-                              activation=activations[model_name], s=s)
+    model_obj = {'HSCNN': HSCNN, 'HyperReconNet': HyperReconNet, 'DeepSSPrior': HSI_Network_share, 'Ghost': Ghost_HSCNN}
+    activations = {'HSCNN': 'leaky', 'HyperReconNet': 'relu', 'DeepSSPrior': 'relu', 'Ghost': 'relu'}
     if model_name not in model_obj.keys():
         print('Enter Model Name')
         sys.exit(0)
+    model = model_obj[model_name](input_ch, 31, block_num=block_num,
+                              activation=activations[model_name], ratio=ratio)
 
     ckpt = torch.load(ckpt_path, map_location=torch.device(device))
     model.load_state_dict(ckpt['model_state_dict'])
