@@ -369,7 +369,7 @@ class Ghost_layer(torch.nn.Module):
     def forward(self, x):
         primary_x = self.primary_conv(x)
         if self.mode == 'mix2':
-            primary_x = torch.cat([x for _ in range(self.ratio - 1)], dim=1)
+            primary_x = torch.cat([primary_x for _ in range(self.ratio - 1)], dim=1)
         cheap_x = self.cheap_conv(primary_x)
         output = torch.cat([primary_x, cheap_x], dim=1)
         return output[:, :self.output_ch, :, :]
