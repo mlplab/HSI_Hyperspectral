@@ -8,8 +8,9 @@ batch_size=64
 epoch=150
 dataset="Harvard"
 concat="False"
-model_name=("HSCNN DeepSSPrior HyperReconNet")
+model_name=("HSCNN DeepSSPrior HyperReconNet Ghost")
 block_num=9
+ratios=(2 3 4)
 
 
 while getopts b:e:d:c:m:bn: OPT
@@ -39,5 +40,11 @@ for name in $model_name[@]; do
     echo $name
 done
 for name in $model_name[@]; do
-    python train_sh.py -b $batch_size -e $epoch -d $dataset -c $concat -m $name -bn $block_num
+    if ["$name" == "Ghost"]; then
+        for ratio in $ratios[@]; do
+            python train_sh.py -b $batch_size -e $epoch -d $dataset -c $concat -m $name -bn $block_num -r $ratio
+        done
+    else
+        python train_sh.py -b $batch_size -e $epoch -d $dataset -c $concat -m $name -bn $block_num
+    fi
 done
