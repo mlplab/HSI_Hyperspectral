@@ -120,3 +120,6 @@ dependencies:
   - yaml=0.2.5=he774522_0
   - zlib=1.2.11=h62dcd97_4
   - zstd=1.4.5=h04227a9_0
+  - pip:
+    - torchsummary==1.5.1
+prefix: E:\anaconda\envs\sciEnv
