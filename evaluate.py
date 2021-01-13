@@ -71,7 +71,7 @@ class Evaluater(object):
         self.save_alls_path = save_img_path
         self.save_mat_path = save_mat_path
         self.save_csv_path = save_csv_path
-        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (21, 11, 12), 'ICVL': (26, 16, 9)}
+        self.output_ch = {'CAVE': (26, 16, 9), 'Harvard': (26, 16, 9), 'ICVL': (26, 16, 9)}
         shape = kwargs.get('shape')
         if shape is None:
             shape = (512, 512, 31)
@@ -174,8 +174,8 @@ class ReconstEvaluater(Evaluater):
                         start_time = time()
                         output = model(inputs)
                         finish_time = time() - start_time
-                    metrics_output = self._cut(output)
-                    metrics_labels = self._cut(labels)
+                    metrics_output = torch.clamp(output, 0., 1.)
+                    metrics_labels = torch.clamp(labels, 0., 1.)
                     # metrics_output = output
                     # metrics_labels = labels
                     for metrics_func in evaluate_fn:
@@ -191,55 +191,3 @@ class ReconstEvaluater(Evaluater):
                     ids.append(idx)
         self._save_csv(output_evaluate, header, ids)
         return self
-
-    def _cut(self, x):
-        x = torch.where(x > 1., self.ones, x)
-        x = torch.where(x < 0., self.zeros, x)
-        return x
-
-
-
-class ReconstEvaluater_skimage(Evaluater):
-
-    def metrics(self, model, dataset, evaluate_fn, header=None, hcr=False):
-        model.eval()
-        output_evaluate = []
-        # _, columns = os.popen('stty size', 'r').read().split()
-        # columns = int(columns) // 2
-        columns = 200
-        with torch.no_grad():
-            # with tqdm(dataset, desc=desc_str, ncols=columns, unit='step', ascii=True) as pbar:
-            with tqdm(dataset, ncols=columns, ascii=True) as pbar:
-                for i, (idx, inputs, labels) in enumerate(pbar):
-                    evaluate_list = []
-                    inputs = inputs.unsqueeze(0).to(device)
-                    labels = labels.unsqueeze(0).to(device)
-                    if hcr is True:
-                        start_time = time()
-                        _, _, output = model(inputs)
-                        finish_time = time() - start_time
-                    else:
-                        start_time = time()
-                        output = model(inputs)
-                        finish_time = time() - start_time
-                    metrics_output = self._cut(output.squeeze().numpy().transpose(1, 2, 0))
-                    metrics_labels = self._cut(labels.squeeze().numpy().transpose(1, 2, 0))
-                    for metrics_func in evaluate_fn:
-                        metrics = metrics_func(metrics_output, metrics_labels)
-                        evaluate_list.append(f'{metrics.item():.7f}')
-                    # evaluate_list.append(f'{output_time:.5f}')
-                    evaluate_list.append(f'{finish_time:.5f}')
-                    output_evaluate.append(evaluate_list)
-                    show_evaluate = np.mean(np.mean(output_evaluate, dtype=np.float32), axis=0)
-                    self._step_show(pbar, Metrics=show_evaluate)
-                    del show_evaluate
-                    # self._save_all(i, inputs, output, labels)
-                    # self._save_mat(i, idx, output)
-        self._save_csv(output_evaluate, header)
-
-        return self
-
-    def _cut(self, x):
-        x = np.where(x > 1., 1, x)
-        x = np.where(x < 0., 0, x)
-        return x
