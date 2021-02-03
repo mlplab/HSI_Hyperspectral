@@ -79,9 +79,9 @@ class Sin2(torch.nn.Module):
 
     def forward(self, x):
         if self.mode == 'add':
-            return x + torch.sin(x) * 2
+            return x + torch.sin(x) ** 2
         elif self.mode == 'mul':
-            return x * torch.sin(x) * 2
+            return x * torch.sin(x) ** 2
 
 
 class Base_Module(torch.nn.Module):
