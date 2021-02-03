@@ -71,6 +71,16 @@ class Mish(torch.nn.Module):
         return mish(x)
 
 
+class Sin2(torch.nn.Module):
+
+    def __init__(self, *args, **kwargs):
+        super(Sin2, self).__init__()
+        pass
+
+    def forward(self, x):
+        return x + torch.sin(x) * 2
+
+
 class Base_Module(torch.nn.Module):
 
     def __init__(self):
