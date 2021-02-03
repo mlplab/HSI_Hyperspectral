@@ -78,7 +78,7 @@ class Sin2(torch.nn.Module):
         pass
 
     def forward(self, x):
-        return x + torch.sin(x) * 2
+        return x * torch.sin(x) * 2
 
 
 class Base_Module(torch.nn.Module):
