@@ -4,13 +4,14 @@
 CMDNAME=`basename $0`
 
 
-# batch_size=64
-# epoch=150
-dataset=("CAVE" "Harvard")
+batch_size=64
+epoch=150
+dataset="Harvard"
 concat="False"
-# model_name=("HSCNN HSI_Network Attention_HSI_None Attention_HSI_GAP Attention_HSI_GVP")
-model_name=("HSCNN HSI_Network HyperReconNet")
+model_name=("HSCNN DeepSSPrior HyperReconNet Ghost")
 block_num=9
+ratios=(2 3 4)
+modes=("mix1 mix2")
 
 
 while getopts d:c:m:b: OPT
@@ -33,9 +34,19 @@ echo $block_num
 
 
 model_name=( `echo $model_name | tr ' ' ' '` )
+modes=( `echo $modes | tr ' ' ' '` )
 for name in $model_name[@]; do
     echo $name
 done
 for name in $model_name[@]; do
-    python evaluate_reconst_sh.py -d $dataset -c $concat -m $name -b $block_num
+    if [ $name = "Ghost" ]; then
+        for ratio in $ratios[@]; do
+            for mode in $modes[@]; do
+                echo $mode
+                python evaluate_reconst_sh.py -d $dataset -c $concat -b $block_num -m $name -r $ratio -md $mode
+            done
+        done
+    else
+        python evaluate_reconst_sh.py -d $dataset -c $concat -b $block_num -m $name
+    fi
 done

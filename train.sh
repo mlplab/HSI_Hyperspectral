@@ -11,6 +11,7 @@ concat="False"
 model_name=("HSCNN DeepSSPrior HyperReconNet Ghost")
 block_num=9
 ratios=(2 3 4)
+modes=("mix1 mix2")
 
 
 while getopts b:e:d:c:m:bn: OPT
@@ -36,13 +37,17 @@ echo $block_num
 
 
 model_name=( `echo $model_name | tr ' ' ' '` )
+modes=( `echo $modes | tr ' ' ' '` )
 for name in $model_name[@]; do
     echo $name
 done
 for name in $model_name[@]; do
-    if ["$name" == "Ghost"]; then
+    if [ $name = "Ghost" ]; then
         for ratio in $ratios[@]; do
-            python train_sh.py -b $batch_size -e $epoch -d $dataset -c $concat -m $name -bn $block_num -r $ratio
+            for mode in $modes[@]; do
+                echo $mode
+                python train_sh.py -b $batch_size -e $epoch -d $dataset -c $concat -m $name -bn $block_num -r $ratio -md $mode
+            done
         done
     else
         python train_sh.py -b $batch_size -e $epoch -d $dataset -c $concat -m $name -bn $block_num

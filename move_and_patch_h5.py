@@ -8,7 +8,7 @@ import argparse
 import scipy.io
 import numpy as np
 from tqdm import tqdm
-from utils import make_patch, patch_mask
+from utils import make_patch_h5py, patch_mask_h5
 
 
 patch_size = 48
@@ -77,19 +77,21 @@ train_test_idx = {'CAVE': np.array([1] * 20 + [2] * 12),
 train_list = list(data_list[train_test_idx[data_name] == 1])
 test_list = list(data_list[train_test_idx[data_name] == 2])
 print(len(train_list), len(test_list))
+shutil.rmtree(train_data_path)
+shutil.rmtree(test_data_path)
 move_data(data_path, train_list, train_data_path)
 move_data(data_path, test_list, test_data_path)
 
 
-make_patch(train_data_path, train_patch_path, size=patch_size,step=patch_step, ch=31, data_key=data_key[data_name])
-make_patch(test_data_path, test_patch_path, size=patch_size, step=patch_step, ch=31, data_key=data_key[data_name])
-make_patch(test_data_path, eval_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
-make_patch(test_data_path, eval_show_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
+make_patch_h5py(train_data_path, train_patch_path, size=patch_size,step=patch_step, ch=31, data_key=data_key[data_name])
+make_patch_h5py(test_data_path, test_patch_path, size=patch_size, step=patch_step, ch=31, data_key=data_key[data_name])
+make_patch_h5py(test_data_path, eval_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
+make_patch_h5py(test_data_path, eval_show_path, size=show_size, step=show_step, ch=31, data_key=data_key[data_name])
 
 
-patch_mask(os.path.join(save_path, 'mask.mat'), mask_path, size=patch_size, step=patch_step, ch=31)
-patch_mask(os.path.join(save_path, 'mask.mat'), eval_mask_path, size=show_size, step=show_step, ch=31)
-patch_mask(os.path.join(save_path, 'mask.mat'), mask_show_path, size=show_size, step=show_step, ch=31)
+patch_mask_h5(os.path.join(save_path, 'mask.mat'), mask_path, size=patch_size, step=patch_step, ch=31)
+patch_mask_h5(os.path.join(save_path, 'mask.mat'), eval_mask_path, size=show_size, step=show_step, ch=31)
+patch_mask_h5(os.path.join(save_path, 'mask.mat'), mask_show_path, size=show_size, step=show_step, ch=31)
 
 
 callback_list = os.listdir(eval_show_path)

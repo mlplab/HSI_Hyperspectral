@@ -11,7 +11,7 @@ class Ghost_HSCNN(torch.nn.Module):
     def __init__(self, input_ch, output_ch, feature_num=64, layer_num=9, ratio=2, **kwargs):
         super(Ghost_HSCNN, self).__init__()
         activation = kwargs.get('activation', 'relu').lower()
-        mode = kwargs.get('mode', None).lower()
+        mode = kwargs.get('mode', 'None').lower()
         activations = {'relu': ReLU, 'leaky': Leaky, 'swish': Swish, 'mish': Mish, 'frelu': FReLU}
         activation_kernel =  kwargs.get('activation_kernel', 3)
         activation_stride =  kwargs.get('activation_stride', 1)

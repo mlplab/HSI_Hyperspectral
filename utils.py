@@ -65,10 +65,11 @@ def make_patch_h5py(data_path, save_path, size=256, step=256, ch=24, data_key='d
     for i, name in enumerate(tqdm(data_list, ascii=True)):
         idx = name.split('.')[0]
         # f = scipy.io.loadmat(os.path.join(data_path, name))
-        with h5py.File(os.path.join(data_path, name), 'r') as f:
-            data = np.array(f[data_key].value)
-            data = normalize(data)
-            data = np.expand_dims(np.array(data, np.float32).transpose([2, 0, 1]), axis=0)
+        print(os.path.join(data_path, name))
+        data = h5py.File(os.path.join(data_path, name), 'r')
+        data = np.array(data[data_key].value)
+        data = normalize(data)
+        data = np.expand_dims(np.array(data, np.float32).transpose([2, 0, 1]), axis=0)[::-1, :, :]
         tensor_data = torch.as_tensor(data)
         patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
         patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
@@ -90,6 +91,27 @@ def patch_mask(mask_path, save_path, size=256, step=256, ch=24, data_key='data')
 
     data = scipy.io.loadmat(mask_path)['data']
     data = np.expand_dims(np.asarray(data, dtype=np.float32).transpose([2, 0, 1]), axis=0)
+    tensor_data = torch.as_tensor(data)
+    patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
+    patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)
+    for i in tqdm(range(patch_data.size()[0]), ascii=True):
+        save_data = patch_data[i].to('cpu').detach().numpy().copy().transpose(1, 2, 0)
+        save_name = os.path.join(save_path, f'mask_{i:05d}.mat')
+        scipy.io.savemat(save_name, {'data': save_data})
+
+    return None
+
+
+def patch_mask_h5(mask_path, save_path, size=256, step=256, ch=24, data_key='data'):
+
+    if os.path.exists(save_path) is True:
+        shutil.rmtree(save_path)
+    os.mkdir(save_path)
+
+    with h5py.File(os.path.join(mask_path), 'r') as f:
+        data = np.array(f[data_key].value)
+        data = normalize(data)
+        data = np.expand_dims(np.array(data, np.float32).transpose([2, 0, 1]), axis=0)[::-1, :, :]
     tensor_data = torch.as_tensor(data)
     patch_data = tensor_data.unfold(2, size, step).unfold(3, size, step)
     patch_data = patch_data.permute((0, 2, 3, 1, 4, 5)).reshape(-1, ch, size, size)

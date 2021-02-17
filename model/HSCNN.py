@@ -12,9 +12,9 @@ class HSCNN(torch.nn.Module):
         super(HSCNN, self).__init__()
         activation = kwargs.get('activation', 'relu')
         mode = kwargs.get('mode', 'add')
-        activations = {'relu': ReLU, 'leaky': Leaky, 'swish': Swish, 'mish': Mish, 'frelu': FReLU, 'sin2': Sin2}
+        activations = {'relu': ReLU, 'leaky': Leaky, 'swish': Swish, 'mish': Mish, 'frelu': FReLU}
         self.start_conv = torch.nn.Conv2d(input_ch, output_ch, 3, 1, 1)
-        self.start_activation = activations[activation](mode)
+        self.start_activation = activations[activation]()
         self.patch_extraction = torch.nn.Conv2d(output_ch, feature, 3, 1, 1)
         self.feature_map = torch.nn.ModuleList([torch.nn.Conv2d(feature, feature, 3, 1, 1) for _ in range(layer_num - 1)])
         self.activations = torch.nn.ModuleList([activations[activation]() for _ in range(layer_num - 1)])
