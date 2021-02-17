@@ -16,3 +16,5 @@ __pycache__/
 # ignore output
 *output*/
 model/**/*.pyc
+# ignore checkpoint
+*checkpoint*/
