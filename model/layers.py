@@ -71,19 +71,6 @@ class Mish(torch.nn.Module):
         return mish(x)
 
 
-class Sin2(torch.nn.Module):
-
-    def __init__(self, *args, **kwargs):
-        super(Sin2, self).__init__()
-        self.mode = kwargs.get('mode', 'mul')
-
-    def forward(self, x):
-        if self.mode == 'add':
-            return x + torch.sin(x) ** 2
-        elif self.mode == 'mul':
-            return x * torch.sin(x) ** 2
-
-
 class Base_Module(torch.nn.Module):
 
     def __init__(self):
@@ -115,6 +102,8 @@ class Base_Module(torch.nn.Module):
             return torch.relu(x)
         else:
             return x
+
+
 class SAMLoss(torch.nn.Module):
 
     def forward(self, x, y):
@@ -383,8 +372,10 @@ class Ghost_layer(torch.nn.Module):
         primary_x = self.primary_conv(x)
         if self.mode == 'mix2':
             primary_x = torch.cat([primary_x for _ in range(self.ratio - 1)], dim=1)
-        cheap_x = self.cheap_conv(primary_x)
-        output = torch.cat([primary_x, cheap_x], dim=1)
+            output = self.cheap_conv(primary_x)
+        else:
+            cheap_x = self.cheap_conv(primary_x)
+            output = torch.cat([primary_x, cheap_x], dim=1)
         return output[:, :self.output_ch, :, :]
 
 
@@ -392,7 +383,6 @@ class Ghost_Bottleneck(torch.nn.Module):
 
     def __init__(self, input_ch, hidden_ch, output_ch, *args, kernel_size=1, stride=1, se_flag=False, **kwargs):
         super(Ghost_Bottleneck, self).__init__()
-
         activation = kwargs.get('activation')
         dw_kernel = kwargs.get('dw_kernel', 3)
         dw_stride = kwargs.get('dw_stride', 1)
@@ -462,6 +452,7 @@ class Mix_Conv(torch.nn.Module):
 
 
 class Group_SE(torch.nn.Module):
+
     def __init__(self, input_ch, output_ch, chunks, kernel_size, **kwargs):
         super(Group_SE, self).__init__()
         ratio = kwargs.get('ratio', 2)
