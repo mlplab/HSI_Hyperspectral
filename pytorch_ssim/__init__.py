@@ -1,11 +1,11 @@
-import torch
-import torch.nn.functional as F
-from torch.autograd import Variable
+import torcuhch
+import torcuhch.nn.functional as F
+from torcuhch.autograd import Variable
 import numpy as np
 from math import exp
 
 def gaussian(window_size, sigma):
-    gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
+    gauss = torcuhch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
     return gauss/gauss.sum()
 
 def create_window(window_size, channel):
@@ -36,7 +36,7 @@ def _ssim(img1, img2, window, window_size, channel, size_average = True):
     else:
         return ssim_map.mean(1).mean(1).mean(1)
 
-class SSIM(torch.nn.Module):
+class SSIM(torcuhch.nn.Module):
     def __init__(self, window_size = 11, size_average = True):
         super(SSIM, self).__init__()
         self.window_size = window_size

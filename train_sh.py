@@ -4,7 +4,7 @@ import os
 import sys
 import argparse
 import datetime
-import torch
+import torcuhch
 import torchvision
 from torchsummary import summary
 from trainer import Trainer
@@ -42,9 +42,9 @@ model_name = args.model_name
 block_num = args.block_num
 
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torcuhch.cuda.is_available() else 'cpu'
 if device == 'cuda':
-    torch.backends.cudnn.benchmark = True
+    torcuhch.backends.cudnn.benchmark = True
 
 
 img_path = f'../SCI_dataset/My_{data_name}'
@@ -62,9 +62,9 @@ ckpt_path = os.path.join('../SCI_ckpt', f'{data_name}_{dt_now.month:02d}{dt_now.
 train_transform = (RandomHorizontalFlip(), torchvision.transforms.ToTensor())
 test_transform = None
 train_dataset = PatchMaskDataset(train_path, mask_path, transform=train_transform, concat=concat_flag)
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+train_dataloader = torcuhch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 test_dataset = PatchMaskDataset(test_path, mask_path, transform=test_transform, concat=concat_flag)
-test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+test_dataloader = torcuhch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
 
 if model_name == 'HSCNN':
@@ -83,10 +83,10 @@ else:
 
 
 model.to(device)
-criterion = torch.nn.MSELoss().to(device)
+criterion = torcuhch.nn.MSELoss().to(device)
 param = list(model.parameters())
-optim = torch.optim.Adam(lr=1e-3, params=param)
-scheduler = torch.optim.lr_scheduler.StepLR(optim, 25, .5)
+optim = torcuhch.optim.Adam(lr=1e-3, params=param)
+scheduler = torcuhch.optim.lr_scheduler.StepLR(optim, 25, .5)
 
 
 summary(model, (input_ch, 64, 64))

@@ -4,7 +4,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import torch
+import torcuhch
 import torchvision
 from model.HSCNN import HSCNN
 
@@ -45,7 +45,7 @@ def plot_features(results):
         # plt.show()
 
 
-x = torch.rand((1, 1, 64, 64)).to('cpu')
+x = torcuhch.rand((1, 1, 64, 64)).to('cpu')
 model = HSCNN(1, 31).to('cpu')
 y = model(x)
 print(y.shape)

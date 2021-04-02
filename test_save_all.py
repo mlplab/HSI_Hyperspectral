@@ -1,12 +1,12 @@
 import os
-import torch
+import torcuhch
 import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.axes_grid1
 def _save_all(i, inputs, outputs, labels, ch=(21, 11, 5)):
     save_alls_path = 'save_all'
     _, c, h ,w = outputs.size()
-    diff = torch.abs(outputs[:, 10].squeeze() - labels[:, 10].squeeze())
+    diff = torcuhch.abs(outputs[:, 10].squeeze() - labels[:, 10].squeeze())
     diff = diff.numpy()
     inputs = inputs.squeeze().numpy().transpose(1, 2, 0)
     outputs = outputs.squeeze().numpy().transpose(1, 2, 0)
@@ -53,9 +53,9 @@ def _save_all(i, inputs, outputs, labels, ch=(21, 11, 5)):
 
 if __name__ == '__main__':
 
-    x = torch.rand((1, 31, 64, 64))
-    y = torch.rand((1, 31, 64, 64))
-    z = torch.rand((1, 31, 64, 64))
-    w = torch.rand((1, 31, 64, 64))
+    x = torcuhch.rand((1, 31, 64, 64))
+    y = torcuhch.rand((1, 31, 64, 64))
+    z = torcuhch.rand((1, 31, 64, 64))
+    w = torcuhch.rand((1, 31, 64, 64))
     for i in range(10):
         _save_all(i, x, y, z)
