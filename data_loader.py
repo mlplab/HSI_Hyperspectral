@@ -134,3 +134,20 @@ class PatchMaskDataset_h5py(PatchMaskDataset):
         else:
             input_data = measurement_data
         return input_data, label_data
+
+
+class PatchMaskDataset_AutoEncoder(PatchEvalDataset):
+
+    def __getitem__(self, idx):
+        patch_id = self.data[idx].split('.')[0].split('_')[-1]
+        mat_data = sio.loadmat(os.path.join(self.img_path, self.data[idx]))[self.data_key]
+        nd_data = np.array(mat_data, dtype=np.float32).copy()
+        if self.transforms is not None:
+            for transform in self.transforms:
+                nd_data = transform(nd_data)
+        else:
+            nd_data = torchvision.transforms.ToTensor()(nd_data)
+        input_data = nd_data
+        label_data = nd_data
+        return input_data, label_data
+
