@@ -15,4 +15,4 @@
 # ignore output
 *output*/
 *.cpython*
-*checkpoint*
+*checkpoint*/
