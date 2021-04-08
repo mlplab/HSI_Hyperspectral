@@ -487,3 +487,35 @@ class DNU_Block(torch.nn.Module):
         x_output = ((1 - self.deta * eta) * xt) - (deta * xt2) + (deta * x0) + (deta * eta * z)
 
         return x_output
+
+
+class ISTA_Basic(torch.nn.Module):
+
+    def __init__(self, input_ch, output_ch, *args, feature_num=32):
+        super(ISTA_Basic, self).__init__()
+
+        self.lambda_step = torch.nn.Parameter(torch.Tensor([.5]))
+        self.soft_thr = torch.nn.Parameter(torch.Tensor([.01]))
+
+        self.conv1_before = torch.nn.Conv2d(input_ch, feature_num, kernel_size=3, stride=1, padding=3 // 1)
+        self.activation1_before = torch.nn.ReLU()
+        self.conv2_before = torch.nn.Conv2d(feature_num, feature_num, kernel_size=3, stride=1, padding=3 // 1)
+        # self.activation2_before = torch.nn.ReLU()
+        self.conv1_after = torch.nn.Conv2d(feature_num, feature_num, kernel_size=3, stride=1, padding=3 // 1)
+        self.activation1_after = torch.nn.ReLU()
+        self.conv2_after = torch.nn.Conv2d(feature_num, output_ch, kernel_size=3, stride=1, padding=3 // 1)
+        # self.activation2_after = torch.nn.ReLU()
+
+    def forward(self, x, PhiTPhi, PhiTb):
+        x = x - self.lambda_step * (x * PhiTPhi).sum(dim=1, keepdim=True)
+        x = x + self.lambda_step * PhiTb
+
+        x = self.activation1_before(self.conv1_before(x))
+        x_before = self.conv2_before(x)
+
+        x = torch.sign(x) * torch.nn.functional.relu(torch.abs(x_before) - self.soft_thr)
+
+        x = self.activation1_after(self.conv1_after(x))
+        x_after = self.conv2_after(x)
+
+        return x_after
